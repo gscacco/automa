@@ -16,6 +16,7 @@ public class Automa {
     private AutomaEvent lastEvent;
     private AutomaState currentState;
     private FileOutputStream sequenceStream;
+    private Logger log = Logger.getLogger(getClass().getSimpleName());
 
     public Automa(AutomaState startState) {
         this.currentState = startState;
@@ -42,6 +43,8 @@ public class Automa {
                     return;
                 }
             }
+        } else {
+            log.warning("Discard event " + event.toString() + " from state " + currentState.toString());
         }
 
         lastEvent = event;
