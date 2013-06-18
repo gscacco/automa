@@ -3,6 +3,8 @@ package org.gsc.automa;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Logger;
 
 /**
@@ -17,6 +19,8 @@ public class Automa {
     private AutomaState currentState;
     private FileOutputStream sequenceStream;
     private Logger log = Logger.getLogger(getClass().getSimpleName());
+    private Thread threadAutoma;
+    private BlockingQueue<AutomaEvent> automaEvents = new LinkedBlockingQueue<AutomaEvent>();
 
     public Automa(AutomaState startState) {
         this.currentState = startState;
@@ -24,15 +28,29 @@ public class Automa {
             sequenceStream = new FileOutputStream(File.createTempFile("AutomaSequenceDiagram", ".txt"));
             sequenceStream.write("@startuml\n".getBytes());
         } catch (IOException e) {
-            Logger.getAnonymousLogger().warning("Unable to create the .puml file");
+            Logger.getAnonymousLogger().warning("Unable to create the .txt file");
         }
+        threadAutoma = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        AutomaEvent event = automaEvents.take();
+                        execAsincSignalEvent(event);
+                    } catch (InterruptedException e) {
+                        //TODO Cosa fare ?
+                    }
+                }
+            }
+        });
+        threadAutoma.start();
     }
 
     public AutomaEvent getLastEvent() {
         return lastEvent;
     }
 
-    public void signalEvent(AutomaEvent event) {
+    private void execAsincSignalEvent(AutomaEvent event) {
         Comparable<AutomaEvent> comparable;
         StateAction stateAction = currentState.getStateAction(event);
 
@@ -63,6 +81,14 @@ public class Automa {
                 action.run();
             }
             currentState = stateAction.getStatus();
+        }
+    }
+
+    public void signalEvent(AutomaEvent event) {
+        try {
+            this.automaEvents.put(event);
+        } catch (InterruptedException e) {
+            //TODO Cosa fare ?
         }
     }
 
