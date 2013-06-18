@@ -18,6 +18,7 @@ public class testSimpleAutoma {
     private AutomaEvent evtOne = new AutomaEvent("evtOne");
     private AutomaEvent evtTwo = new AutomaEvent("evtTwo");
     private boolean runCheck = false;
+    private Boolean syncVar = false;
 
     @Test
     public void shouldCreateAutoma() {
@@ -33,7 +34,10 @@ public class testSimpleAutoma {
         Runnable action = new Runnable() {
             @Override
             public void run() {
-                runCheck = true;
+                synchronized (syncVar) {
+                    runCheck = true;
+                    syncVar.notifyAll();
+                }
             }
         };
 
@@ -45,9 +49,16 @@ public class testSimpleAutoma {
         assertFalse(runCheck);
 
         automa.signalEvent(evtTwo);
+        synchronized (syncVar) {
+            try {
+                syncVar.wait();
+            } catch (InterruptedException e) {
+            }
+        }
         assertTrue(runCheck);
 
         automa.closeAutoma();
+
     }
 
 }
