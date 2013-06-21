@@ -22,6 +22,11 @@ public class Automa {
     private Thread threadAutoma;
     private BlockingQueue<AutomaEvent> automaEvents = new LinkedBlockingQueue<AutomaEvent>();
 
+    /**
+     * Automa constructor
+     *
+     * @param startState The start state of the automa
+     */
     public Automa(AutomaState startState) {
         this.currentState = startState;
         try {
@@ -38,7 +43,7 @@ public class Automa {
                         AutomaEvent event = automaEvents.take();
                         execAsincSignalEvent(event);
                     } catch (InterruptedException e) {
-                        //TODO Cosa fare ?
+                        Logger.getAnonymousLogger().info("Automa interrupted on state " + currentState);
                     }
                 }
             }
@@ -46,6 +51,11 @@ public class Automa {
         threadAutoma.start();
     }
 
+    /**
+     * This method is normaly used in the action. It returns the last event signaled to the automa
+     *
+     * @return The last event
+     */
     public AutomaEvent getLastEvent() {
         return lastEvent;
     }
@@ -84,6 +94,11 @@ public class Automa {
         }
     }
 
+    /**
+     * This method is used to signal an event to the automa
+     *
+     * @param event The event
+     */
     public void signalEvent(AutomaEvent event) {
         try {
             this.automaEvents.put(event);
@@ -92,6 +107,10 @@ public class Automa {
         }
     }
 
+    /**
+     * This method should be called at the end of the execution of the automa.
+     * It also writes @enduml at the end of the temporary file containing the sequence diagram.
+     */
     public void closeAutoma() {
         if (sequenceStream != null) {
             try {
@@ -99,5 +118,6 @@ public class Automa {
             } catch (IOException e) {
             }
         }
+        threadAutoma.interrupt();
     }
 }
