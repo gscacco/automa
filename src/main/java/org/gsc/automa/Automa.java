@@ -41,14 +41,19 @@ public class Automa {
                 while (true) {
                     try {
                         AutomaEvent event = automaEvents.take();
-                        execAsincSignalEvent(event);
+                        handleEvent(event);
                     } catch (InterruptedException e) {
                         Logger.getAnonymousLogger().info("Automa interrupted on state " + currentState);
                     }
                 }
             }
         });
-        threadAutoma.start();
+        if (AutomaConfiguration.isThreading()) {
+            Logger.getAnonymousLogger().info("Automa started in asynchronous mode");
+            threadAutoma.start();
+        } else {
+            Logger.getAnonymousLogger().info("Automa started in synchronous mode");
+        }
     }
 
     /**
@@ -60,7 +65,7 @@ public class Automa {
         return lastEvent;
     }
 
-    private void execAsincSignalEvent(AutomaEvent event) {
+    private void handleEvent(AutomaEvent event) {
         Comparable<AutomaEvent> comparable;
         StateAction stateAction = currentState.getStateAction(event);
 
@@ -100,11 +105,16 @@ public class Automa {
      * @param event The event
      */
     public void signalEvent(AutomaEvent event) {
-        try {
-            this.automaEvents.put(event);
-        } catch (InterruptedException e) {
-            //TODO Cosa fare ?
+        if (AutomaConfiguration.isThreading()) {
+            try {
+                this.automaEvents.put(event);
+            } catch (InterruptedException e) {
+                //TODO Cosa fare ?
+            }
+        } else {
+            handleEvent(event);
         }
+
     }
 
     /**
