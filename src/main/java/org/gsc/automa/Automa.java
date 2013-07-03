@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -99,7 +100,7 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(final AutomaEvent event) throws Exception {
+    public void signalEvent(final AutomaEvent event) {
         if (AutomaConfiguration.isThreading()) {
             IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
             Runnable job = new Runnable() {
@@ -111,7 +112,7 @@ public class Automa {
             if (executorService != null) {
                 executorService.submitJob(job);
             } else {
-                throw new Exception("The automa is multithread but no executor service available");
+                Logger.getAnonymousLogger().log(Level.SEVERE, "The automa is multithread but no executor service available");
             }
 
         } else {
