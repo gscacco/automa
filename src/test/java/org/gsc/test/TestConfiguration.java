@@ -33,6 +33,9 @@ public class TestConfiguration {
     @Before
     public void before() {
         actionExecuted = false;
+        AutomaConfiguration.setThreading(true);
+        AutomaConfiguration.setThreadsNumber(1);
+        AutomaServiceDiscovery.setExecutorService(null);
     }
 
     /**
@@ -40,7 +43,7 @@ public class TestConfiguration {
      * quando .setThreading(false) l'automa eseguirà le azioni in modo sincrono
      */
     @Test
-    public void shouldTestConfiguration() {
+    public void shouldTestConfiguration() throws Exception {
         AutomaConfiguration.setThreading(false);
         AutomaState startState = new AutomaState("StartState");
         AutomaEvent evt = new AutomaEvent("Evt");
@@ -51,10 +54,11 @@ public class TestConfiguration {
 
         automa.signalEvent(evt);
         assertTrue(actionExecuted);
+        automa.closeAutoma();
     }
 
     @Test
-    public void shouldTestConfigurationThreadingPool() {
+    public void shouldTestConfigurationThreadingPool() throws Exception {
         int num = 4;
         AutomaConfiguration.setThreading(true);
         AutomaConfiguration.setThreadsNumber(num);
@@ -71,10 +75,11 @@ public class TestConfiguration {
 
         assertEquals(num, executorService.getThreadsNumber());
         assertEquals(1, executorService.getSubmittedJobs());
+        automa.closeAutoma();
     }
 
     @Test
-    public void shouldVerifyNoThreads() {
+    public void shouldVerifyNoThreads() throws Exception {
         AutomaConfiguration.setThreading(false);
 
         FakeAutomaExecutorService executorService = new FakeAutomaExecutorService();
@@ -87,5 +92,26 @@ public class TestConfiguration {
         Automa automa = new Automa(startState);
         automa.signalEvent(evt);
         assertEquals(0, executorService.getSubmittedJobs());
+        automa.closeAutoma();
+    }
+
+    @Test(expected = Exception.class)
+    public void shouldVerifyThreadButNoExecutorService() throws Exception {
+        int num = 4;
+        AutomaConfiguration.setThreading(true);
+        AutomaConfiguration.setThreadsNumber(num);
+
+
+        AutomaState startState = new AutomaState("StartState");
+        AutomaEvent evt = new AutomaEvent("Evt");
+        from(startState).stay().when(evt).andDo(myAction);
+
+        Automa automa = new Automa(startState);
+
+        //Set the executor service to null after the instantiation of the automa
+        AutomaServiceDiscovery.setExecutorService(null);
+
+        automa.signalEvent(evt);
+        automa.closeAutoma();
     }
 }

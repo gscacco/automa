@@ -1,11 +1,14 @@
 package org.gsc.test;
 
-import org.gsc.automa.*;
-import org.junit.Assert;
+import org.gsc.automa.Automa;
+import org.gsc.automa.AutomaEvent;
+import org.gsc.automa.AutomaFactory;
+import org.gsc.automa.AutomaState;
 import org.junit.Test;
 
-import static org.gsc.automa.StateConnector.*;
-import static org.junit.Assert.*;
+import static org.gsc.automa.StateConnector.from;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -21,7 +24,7 @@ public class testSimpleAutoma {
     private Boolean syncVar = false;
 
     @Test
-    public void shouldCreateAutoma() {
+    public void shouldCreateAutoma() throws Exception {
 
         AutomaFactory af = new AutomaFactory();
         AutomaState start = af.createState("start");
