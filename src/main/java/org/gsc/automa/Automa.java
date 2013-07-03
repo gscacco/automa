@@ -1,5 +1,7 @@
 package org.gsc.automa;
 
+import org.gsc.automa.config.AutomaConfiguration;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
