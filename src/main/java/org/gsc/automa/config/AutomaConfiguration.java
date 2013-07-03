@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
  */
 public class AutomaConfiguration {
     private static boolean threading = true;
-    private static int threadsNumber;
+    private static int threadsNumber = 1;
     protected static ExecutorService service;
 
     public static void setThreading(boolean threading) {

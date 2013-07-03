@@ -8,4 +8,7 @@ package org.gsc.automa.config;
  * To change this template use File | Settings | File Templates.
  */
 public interface IAutomaExecutorService {
+    void submitJob(Runnable job);
+
+    void stopService();
 }

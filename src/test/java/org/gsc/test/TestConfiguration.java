@@ -50,8 +50,9 @@ public class TestConfiguration {
 
     @Test
     public void shouldTestConfigurationThreadingPool() {
+        int num = 4;
         AutomaConfiguration.setThreading(true);
-        AutomaConfiguration.setThreadsNumber(2);
+        AutomaConfiguration.setThreadsNumber(num);
 
         Runnable myAction = new Runnable() {
             @Override
@@ -70,6 +71,7 @@ public class TestConfiguration {
         Automa automa = new Automa(startState);
         automa.signalEvent(evt);
 
-        assertEquals(2, executorService.getThreadsNumber());
+        assertEquals(num, executorService.getThreadsNumber());
+        assertEquals(1, executorService.getSubmittedJobs());
     }
 }

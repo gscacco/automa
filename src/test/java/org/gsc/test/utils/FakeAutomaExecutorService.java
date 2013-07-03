@@ -12,6 +12,7 @@ import org.gsc.automa.config.IAutomaExecutorService;
  */
 public class FakeAutomaExecutorService implements IAutomaExecutorService {
     private final int threads;
+    private int numJobs = 0;
 
     public FakeAutomaExecutorService() {
         threads = AutomaConfiguration.getThreadsNumber();
@@ -19,5 +20,19 @@ public class FakeAutomaExecutorService implements IAutomaExecutorService {
 
     public int getThreadsNumber() {
         return threads;
+    }
+
+    public int getSubmittedJobs() {
+        return numJobs;
+    }
+
+    @Override
+    public void submitJob(Runnable job) {
+        this.numJobs++;
+    }
+
+    @Override
+    public void stopService() {
+
     }
 }
