@@ -1,6 +1,7 @@
 package org.gsc.automa;
 
 import org.gsc.automa.config.AutomaConfiguration;
+import org.gsc.automa.config.AutomaExecutorService;
 import org.gsc.automa.config.AutomaServiceDiscovery;
 import org.gsc.automa.config.IAutomaExecutorService;
 
@@ -31,6 +32,10 @@ public class Automa {
      * @param startState The start state of the automa
      */
     public Automa(AutomaState startState) {
+        if (AutomaServiceDiscovery.getExecutorService() == null) {
+            AutomaExecutorService executorService = new AutomaExecutorService();
+            AutomaServiceDiscovery.setExecutorService(executorService);
+        }
         this.currentState = startState;
         try {
             sequenceStream = new FileOutputStream(File.createTempFile("AutomaSequenceDiagram", ".txt"));
@@ -94,7 +99,7 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(final AutomaEvent event) {
+    public void signalEvent(final AutomaEvent event) throws Exception {
         if (AutomaConfiguration.isThreading()) {
             IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
             Runnable job = new Runnable() {
@@ -103,7 +108,11 @@ public class Automa {
                     handleEvent(event);
                 }
             };
-            executorService.submitJob(job);
+            if (executorService != null) {
+                executorService.submitJob(job);
+            } else {
+                throw new Exception("The automa is multithread but no executor service available");
+            }
 
         } else {
             handleEvent(event);
@@ -121,6 +130,9 @@ public class Automa {
             } catch (IOException e) {
             }
         }
-        AutomaServiceDiscovery.getExecutorService().stopService();
+        if (AutomaServiceDiscovery.getExecutorService() != null) {
+            AutomaServiceDiscovery.getExecutorService().stopService();
+        }
+
     }
 }
