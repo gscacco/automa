@@ -1,5 +1,9 @@
 package org.gsc.automa;
 
+import org.gsc.automa.config.AutomaConfiguration;
+import org.gsc.automa.config.AutomaServiceDiscovery;
+import org.gsc.automa.config.IAutomaExecutorService;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,7 +23,6 @@ public class Automa {
     private AutomaState currentState;
     private FileOutputStream sequenceStream;
     private Logger log = Logger.getLogger(getClass().getSimpleName());
-    private Thread threadAutoma;
     private BlockingQueue<AutomaEvent> automaEvents = new LinkedBlockingQueue<AutomaEvent>();
 
     /**
@@ -35,22 +38,9 @@ public class Automa {
         } catch (IOException e) {
             Logger.getAnonymousLogger().warning("Unable to create the .txt file");
         }
-        threadAutoma = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        AutomaEvent event = automaEvents.take();
-                        handleEvent(event);
-                    } catch (InterruptedException e) {
-                        Logger.getAnonymousLogger().info("Automa interrupted on state " + currentState);
-                    }
-                }
-            }
-        });
+
         if (AutomaConfiguration.isThreading()) {
             Logger.getAnonymousLogger().info("Automa started in asynchronous mode");
-            threadAutoma.start();
         } else {
             Logger.getAnonymousLogger().info("Automa started in synchronous mode");
         }
@@ -104,17 +94,20 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(AutomaEvent event) {
+    public void signalEvent(final AutomaEvent event) {
         if (AutomaConfiguration.isThreading()) {
-            try {
-                this.automaEvents.put(event);
-            } catch (InterruptedException e) {
-                //TODO Cosa fare ?
-            }
+            IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
+            Runnable job = new Runnable() {
+                @Override
+                public void run() {
+                    handleEvent(event);
+                }
+            };
+            executorService.submitJob(job);
+
         } else {
             handleEvent(event);
         }
-
     }
 
     /**
@@ -128,6 +121,6 @@ public class Automa {
             } catch (IOException e) {
             }
         }
-        threadAutoma.interrupt();
+        AutomaServiceDiscovery.getExecutorService().stopService();
     }
 }
