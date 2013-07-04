@@ -9,6 +9,7 @@ package org.gsc.automa.config;
  */
 public class AutomaServiceDiscovery {
     private static IAutomaExecutorService executorService;
+    private static IOutputStreamService outputStreamService;
 
     public static void setExecutorService(IAutomaExecutorService executorService) {
         AutomaServiceDiscovery.executorService = executorService;
@@ -16,5 +17,13 @@ public class AutomaServiceDiscovery {
 
     public static IAutomaExecutorService getExecutorService() {
         return executorService;
+    }
+
+    public static void setOutputStreamService(IOutputStreamService outputStreamService) {
+        AutomaServiceDiscovery.outputStreamService = outputStreamService;
+    }
+
+    public static IOutputStreamService getOutputStreamService() {
+        return outputStreamService;
     }
 }

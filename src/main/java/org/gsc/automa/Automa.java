@@ -1,14 +1,9 @@
 package org.gsc.automa;
 
-import org.gsc.automa.config.AutomaConfiguration;
-import org.gsc.automa.config.AutomaServiceDiscovery;
-import org.gsc.automa.config.IAutomaExecutorService;
+import org.gsc.automa.config.*;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,9 +16,9 @@ import java.util.logging.Logger;
 public class Automa {
     private AutomaEvent lastEvent;
     private AutomaState currentState;
-    private FileOutputStream sequenceStream;
+    private IOutputStreamService sequenceStream;
     private Logger log = Logger.getLogger(getClass().getSimpleName());
-    private BlockingQueue<AutomaEvent> automaEvents = new LinkedBlockingQueue<AutomaEvent>();
+    private boolean firstSignal = true;
 
     /**
      * Automa constructor
@@ -32,12 +27,7 @@ public class Automa {
      */
     public Automa(AutomaState startState) {
         this.currentState = startState;
-        try {
-            sequenceStream = new FileOutputStream(File.createTempFile("AutomaSequenceDiagram", ".txt"));
-            sequenceStream.write("@startuml\n".getBytes());
-        } catch (IOException e) {
-            Logger.getAnonymousLogger().warning("Unable to create the .txt file");
-        }
+        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
 
         if (AutomaConfiguration.isThreading()) {
             Logger.getAnonymousLogger().info("Automa started in asynchronous mode");
@@ -77,7 +67,7 @@ public class Automa {
             if (sequenceStream != null) {
                 String str = currentState.toString() + " -> " + nextState.toString() + ": " + event.toString() + "\n";
                 try {
-                    sequenceStream.write(str.getBytes());
+                    sequenceStream.write(str);
                 } catch (IOException e) {
                 }
             }
@@ -95,6 +85,10 @@ public class Automa {
      * @param event The event
      */
     public void signalEvent(final AutomaEvent event) {
+        if (this.firstSignal) {
+            setupAutomaConfig();
+            this.firstSignal = false;
+        }
         if (AutomaConfiguration.isThreading()) {
             IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
             Runnable job = new Runnable() {
@@ -103,10 +97,29 @@ public class Automa {
                     handleEvent(event);
                 }
             };
-            executorService.submitJob(job);
+            if (executorService != null) {
+                executorService.submitJob(job);
+            } else {
+                Logger.getAnonymousLogger().log(Level.SEVERE, "The automa is multithread but no executor service available");
+            }
 
         } else {
             handleEvent(event);
+        }
+    }
+
+    private void setupAutomaConfig() {
+        if (AutomaServiceDiscovery.getExecutorService() == null) {
+            AutomaExecutorService executorService = new AutomaExecutorService();
+            AutomaServiceDiscovery.setExecutorService(executorService);
+        }
+        if (AutomaServiceDiscovery.getOutputStreamService() == null) {
+            AutomaServiceDiscovery.setOutputStreamService(new FileOutputStreamService());
+            try {
+                AutomaServiceDiscovery.getOutputStreamService().write("@startuml\n");
+            } catch (IOException e) {
+                Logger.getAnonymousLogger().log(Level.SEVERE, "File not available");
+            }
         }
     }
 
@@ -115,12 +128,15 @@ public class Automa {
      * It also writes @enduml at the end of the temporary file containing the sequence diagram.
      */
     public void closeAutoma() {
+        Logger.getAnonymousLogger().info("Closing automa on state " + currentState);
         if (sequenceStream != null) {
             try {
-                sequenceStream.write("@enduml".getBytes());
+                sequenceStream.write("@enduml");
             } catch (IOException e) {
             }
         }
-        AutomaServiceDiscovery.getExecutorService().stopService();
+        if (AutomaServiceDiscovery.getExecutorService() != null) {
+            AutomaServiceDiscovery.getExecutorService().stopService();
+        }
     }
 }
