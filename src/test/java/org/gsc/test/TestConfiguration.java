@@ -9,6 +9,8 @@ import org.gsc.test.utils.FakeAutomaExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.logging.Logger;
+
 import static org.gsc.automa.StateConnector.from;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -44,6 +46,7 @@ public class TestConfiguration {
      */
     @Test
     public void shouldTestConfiguration() throws Exception {
+        Logger.getAnonymousLogger().info("");
         AutomaConfiguration.setThreading(false);
         AutomaState startState = new AutomaState("StartState");
         AutomaEvent evt = new AutomaEvent("Evt");
@@ -59,6 +62,7 @@ public class TestConfiguration {
 
     @Test
     public void shouldTestConfigurationThreadingPool() throws Exception {
+        Logger.getAnonymousLogger().info("");
         int num = 4;
         AutomaConfiguration.setThreading(true);
         AutomaConfiguration.setThreadsNumber(num);
@@ -80,6 +84,7 @@ public class TestConfiguration {
 
     @Test
     public void shouldVerifyNoThreads() throws Exception {
+        Logger.getAnonymousLogger().info("");
         AutomaConfiguration.setThreading(false);
 
         FakeAutomaExecutorService executorService = new FakeAutomaExecutorService();
@@ -92,26 +97,6 @@ public class TestConfiguration {
         Automa automa = new Automa(startState);
         automa.signalEvent(evt);
         assertEquals(0, executorService.getSubmittedJobs());
-        automa.closeAutoma();
-    }
-
-    @Test(expected = Exception.class)
-    public void shouldVerifyThreadButNoExecutorService() throws Exception {
-        int num = 4;
-        AutomaConfiguration.setThreading(true);
-        AutomaConfiguration.setThreadsNumber(num);
-
-
-        AutomaState startState = new AutomaState("StartState");
-        AutomaEvent evt = new AutomaEvent("Evt");
-        from(startState).stay().when(evt).andDo(myAction);
-
-        Automa automa = new Automa(startState);
-
-        //Set the executor service to null after the instantiation of the automa
-        AutomaServiceDiscovery.setExecutorService(null);
-
-        automa.signalEvent(evt);
         automa.closeAutoma();
     }
 }
