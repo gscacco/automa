@@ -4,7 +4,13 @@ import org.gsc.automa.Automa;
 import org.gsc.automa.AutomaEvent;
 import org.gsc.automa.AutomaFactory;
 import org.gsc.automa.AutomaState;
+import org.gsc.automa.config.AutomaConfiguration;
+import org.gsc.automa.config.AutomaServiceDiscovery;
+import org.gsc.test.utils.FakeFileService;
+import org.junit.Before;
 import org.junit.Test;
+
+import java.util.logging.Logger;
 
 import static org.gsc.automa.StateConnector.from;
 import static org.junit.Assert.assertFalse;
@@ -17,15 +23,20 @@ import static org.junit.Assert.assertTrue;
  * Time: 16.11
  * To change this template use File | Settings | File Templates.
  */
-public class testSimpleAutoma {
+public class TestAutoma {
     private AutomaEvent evtOne = new AutomaEvent("evtOne");
     private AutomaEvent evtTwo = new AutomaEvent("evtTwo");
     private boolean runCheck = false;
     private Boolean syncVar = false;
 
+    @Before
+    public void before() {
+        AutomaConfiguration.setThreading(true);
+    }
+
     @Test
     public void shouldCreateAutoma() throws Exception {
-
+        Logger.getAnonymousLogger().info("");
         AutomaFactory af = new AutomaFactory();
         AutomaState start = af.createState("start");
         AutomaState endState = af.createState("endState");
@@ -39,7 +50,7 @@ public class testSimpleAutoma {
             public void run() {
                 synchronized (syncVar) {
                     runCheck = true;
-                    syncVar.notifyAll();
+                    syncVar.notify();
                 }
             }
         };
@@ -59,9 +70,26 @@ public class testSimpleAutoma {
             }
         }
         assertTrue(runCheck);
-
         automa.closeAutoma();
+    }
 
+    @Test
+    public void shouldVerifyErrorOnSequenceDiagram() throws Exception {
+        Logger.getAnonymousLogger().info("");
+        FakeFileService service = new FakeFileService();
+        service.setThrowExceptionOnWrite();
+        AutomaConfiguration.setThreading(false);
+        AutomaServiceDiscovery.setOutputStreamService(service);
+
+        AutomaFactory af = new AutomaFactory();
+        AutomaState start = af.createState("start");
+
+        from(start).stay().when(evtOne).andDoNothing();
+
+        Automa automa = new Automa(start);
+
+
+        automa.signalEvent(evtOne);
     }
 
 }

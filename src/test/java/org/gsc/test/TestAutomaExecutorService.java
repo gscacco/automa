@@ -5,6 +5,8 @@ import org.gsc.automa.config.AutomaExecutorService;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.logging.Logger;
+
 import static junit.framework.Assert.assertTrue;
 
 /**
@@ -25,6 +27,7 @@ public class TestAutomaExecutorService {
 
     @Test
     public void shouldVerifyJobExecution() throws InterruptedException {
+        Logger.getAnonymousLogger().info("");
         AutomaConfiguration.setThreadsNumber(1);
         AutomaExecutorService service = new AutomaExecutorService();
         Runnable job = new Runnable() {
@@ -45,6 +48,7 @@ public class TestAutomaExecutorService {
 
     @Test
     public void shouldVerifyServiceStop() throws InterruptedException {
+        Logger.getAnonymousLogger().info("");
         AutomaConfiguration.setThreadsNumber(1);
         AutomaExecutorService service = new AutomaExecutorService();
         Runnable job = new Runnable() {
@@ -65,7 +69,7 @@ public class TestAutomaExecutorService {
         service.submitJob(job);
         service.stopService();
         synchronized (waitVar) {
-            waitVar.wait();
+            waitVar.wait(2000);
             assertTrue(actionExecuted);
         }
     }
