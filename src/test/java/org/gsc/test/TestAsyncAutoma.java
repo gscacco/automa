@@ -46,7 +46,7 @@ public class TestAsyncAutoma extends AutomaTestCase {
 
     @Before
     public void before() {
-        super.setUp();
+        super.before();
         execService = Executors.newFixedThreadPool(1);
         start = nextState();
         end = nextState();
@@ -57,7 +57,7 @@ public class TestAsyncAutoma extends AutomaTestCase {
 
     @After
     public void after() {
-        super.tearDown();
+        super.after();
         execService.shutdownNow();
     }
 

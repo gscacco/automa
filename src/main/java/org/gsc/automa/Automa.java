@@ -1,11 +1,5 @@
 package org.gsc.automa;
 
-import org.gsc.automa.config.*;
-
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -16,9 +10,6 @@ import java.util.logging.Logger;
 public class Automa {
     private AutomaEvent lastEvent;
     private AutomaState currentState;
-    private IOutputStreamService sequenceStream;
-    private Logger log = Logger.getLogger(getClass().getSimpleName());
-    private boolean firstSignal = true;
 
     /**
      * Automa constructor
@@ -27,7 +18,6 @@ public class Automa {
      */
     public Automa(AutomaState startState) {
         this.currentState = startState;
-        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
     }
 
     /**
@@ -39,23 +29,37 @@ public class Automa {
         return lastEvent;
     }
 
+    /**
+     * Handle an automa event by executing the action associated 
+     * with the state transition and then transit the automa to the 
+     * related new state. However if the validation of the event 
+     * object fails, the transition won't take place. 
+     * 
+     * @param event The event to handle.
+     */
     protected void handleEvent(AutomaEvent event) {
         StateAction stateAction = currentState.getStateAction(event);
         EventValidator validator = stateAction.getValidator();
         if (validator.validate(event.getCurrentObject())) {
-            lastEvent = event;
             Runnable action = stateAction.getAction();
-            AutomaState nextState = stateAction.getStatus();
-            if (sequenceStream != null) {
-                String str = currentState.toString() + " -> " + nextState.toString() + ": " + event.toString() + "\n";
-                try {
-                    sequenceStream.write(str);
-                } catch (IOException e) {
-                }
-            }
-            action.run();
-            currentState = stateAction.getStatus();
+            transit(currentState, stateAction.getStatus(), action, event);
         }
+    }
+
+    /**
+     * Transit from a state to its following one and execute the 
+     * action associated with the transition.
+     * 
+     * @param startState The state the transition starts from.
+     * @param endState The state the transition ends to.
+     * @param action The action to be executed along this transition. 
+     * @param event The event which has triggered the transisition. 
+     */
+    protected void transit(AutomaState startState, AutomaState endState,
+                           Runnable action, AutomaEvent event) {
+      lastEvent = event;
+      action.run();
+      currentState = endState;
     }
 
     /**
@@ -63,37 +67,8 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(final AutomaEvent event) {
-        if (this.firstSignal) {
-            setupAutomaConfig();
-            this.firstSignal = false;
-        }
+    public void signalEvent(AutomaEvent event) {
         handleEvent(event);
     }
 
-    private void setupAutomaConfig() {
-        if (AutomaServiceDiscovery.getOutputStreamService() == null) {
-            AutomaServiceDiscovery.setOutputStreamService(new FileOutputStreamService());
-            try {
-                AutomaServiceDiscovery.getOutputStreamService().write("@startuml\n");
-            } catch (IOException e) {
-                Logger.getAnonymousLogger().log(Level.SEVERE, "File not available");
-            }
-        }
-        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
-    }
-
-    /**
-     * This method should be called at the end of the execution of the automa.
-     * It also writes @enduml at the end of the temporary file containing the sequence diagram.
-     */
-    public void closeAutoma() {
-        Logger.getAnonymousLogger().info("Closing automa on state " + currentState);
-        if (sequenceStream != null) {
-            try {
-                sequenceStream.write("@enduml");
-            } catch (IOException e) {
-            }
-        }
-    }
 }

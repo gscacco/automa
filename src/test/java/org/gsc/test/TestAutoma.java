@@ -1,15 +1,11 @@
 package org.gsc.test;
 
-import java.util.logging.Logger;
-
 import org.gsc.automa.Automa;
 import org.gsc.automa.AutomaEvent;
 import org.gsc.automa.AutomaState;
 import org.gsc.automa.EventValidator;
 import static org.gsc.automa.StateConnector.from;
-import org.gsc.automa.config.AutomaServiceDiscovery;
 import org.gsc.test.utils.AutomaTestCase;
-import org.gsc.test.utils.FakeFileService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,19 +42,13 @@ public class TestAutoma extends AutomaTestCase {
 
     @Before
     public void before() {
-        super.setUp();
+        super.before();
         evtOne = nextEvent();
         evtTwo = nextEvent();
         start = nextState();
         end = nextState();
         action = new SpyAction();
         automa = new Automa(start);
-    }
-
-    @After
-    public void after() {
-        super.tearDown();
-        automa.closeAutoma();
     }
 
     @Test

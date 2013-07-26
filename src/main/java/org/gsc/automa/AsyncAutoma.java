@@ -33,17 +33,13 @@ public class AsyncAutoma extends Automa {
      * implementation on a separate thread. 
      */
     @Override
-    protected void handleEvent(final AutomaEvent event) {
+    public void signalEvent(final AutomaEvent event) {
         this.execService.submit(new Runnable() {
             @Override
             public void run() {
-                doHandleEvent(event);
+                handleEvent(event);
             }
         });
-    }
-
-    private void doHandleEvent(AutomaEvent event) {
-      super.handleEvent(event);
     }
 
 }
