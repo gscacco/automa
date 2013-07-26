@@ -28,12 +28,6 @@ public class Automa {
     public Automa(AutomaState startState) {
         this.currentState = startState;
 //      sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
-
-        if (AutomaConfiguration.isThreading()) {
-            Logger.getAnonymousLogger().info("Automa started in asynchronous mode");
-        } else {
-            Logger.getAnonymousLogger().info("Automa started in synchronous mode");
-        }
     }
 
     /**
@@ -45,7 +39,7 @@ public class Automa {
         return lastEvent;
     }
 
-    private void handleEvent(AutomaEvent event) {
+    protected void handleEvent(AutomaEvent event) {
 //      Comparable<AutomaEvent> comparable;
         StateAction stateAction = currentState.getStateAction(event);
 
@@ -134,9 +128,6 @@ public class Automa {
 //              sequenceStream.write("@enduml");
 //          } catch (IOException e) {
 //          }
-//      }
-//      if (AutomaServiceDiscovery.getExecutorService() != null) {
-//          AutomaServiceDiscovery.getExecutorService().stopService();
 //      }
 //  }
 }

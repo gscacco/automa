@@ -4,7 +4,6 @@ import org.gsc.automa.Automa;
 import org.gsc.automa.AutomaEvent;
 import org.gsc.automa.AutomaFactory;
 import org.gsc.automa.AutomaState;
-import org.gsc.automa.config.AutomaConfiguration;
 import org.gsc.automa.config.AutomaServiceDiscovery;
 import org.gsc.test.utils.FakeFileService;
 
