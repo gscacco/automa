@@ -8,16 +8,7 @@ package org.gsc.automa.config;
  * To change this template use File | Settings | File Templates.
  */
 public class AutomaServiceDiscovery {
-    private static IAutomaExecutorService executorService;
     private static IOutputStreamService outputStreamService;
-
-    public static void setExecutorService(IAutomaExecutorService executorService) {
-        AutomaServiceDiscovery.executorService = executorService;
-    }
-
-    public static IAutomaExecutorService getExecutorService() {
-        return executorService;
-    }
 
     public static void setOutputStreamService(IOutputStreamService outputStreamService) {
         AutomaServiceDiscovery.outputStreamService = outputStreamService;

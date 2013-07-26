@@ -4,7 +4,6 @@ import org.gsc.automa.Automa;
 import org.gsc.automa.AutomaEvent;
 import org.gsc.automa.AutomaFactory;
 import org.gsc.automa.AutomaState;
-import org.gsc.automa.config.AutomaConfiguration;
 import org.gsc.automa.config.AutomaServiceDiscovery;
 import org.gsc.test.utils.FakeFileService;
 import org.junit.Before;
@@ -27,12 +26,6 @@ public class TestAutoma {
     private AutomaEvent evtOne = new AutomaEvent("evtOne");
     private AutomaEvent evtTwo = new AutomaEvent("evtTwo");
     private boolean runCheck = false;
-    private Boolean syncVar = false;
-
-    @Before
-    public void before() {
-        AutomaConfiguration.setThreading(true);
-    }
 
     @Test
     public void shouldCreateAutoma() throws Exception {
@@ -44,14 +37,10 @@ public class TestAutoma {
 
         from(start).stay().when(evtOne).andDoNothing();
 
-
         Runnable action = new Runnable() {
             @Override
             public void run() {
-                synchronized (syncVar) {
-                    runCheck = true;
-                    syncVar.notify();
-                }
+              runCheck = true;
             }
         };
 
@@ -63,12 +52,6 @@ public class TestAutoma {
         assertFalse(runCheck);
 
         automa.signalEvent(evtTwo);
-        synchronized (syncVar) {
-            try {
-                syncVar.wait();
-            } catch (InterruptedException e) {
-            }
-        }
         assertTrue(runCheck);
         automa.closeAutoma();
     }
@@ -78,7 +61,6 @@ public class TestAutoma {
         Logger.getAnonymousLogger().info("");
         FakeFileService service = new FakeFileService();
         service.setThrowExceptionOnWrite();
-        AutomaConfiguration.setThreading(false);
         AutomaServiceDiscovery.setOutputStreamService(service);
 
         AutomaFactory af = new AutomaFactory();
