@@ -39,11 +39,21 @@ public class TestAsyncAutoma extends AutomaTestCase {
     }
 
     private ExecutorService execService;
+    private AutomaState start;
+    private AutomaState end;
+    private AutomaEvent event;
+    private SpyAction action;
+    private AsyncAutoma automa;
 
     @Before
     public void before() {
         super.setUp();
         execService = Executors.newFixedThreadPool(1);
+        start = nextState();
+        end = nextState();
+        event = nextEvent();
+        action = new SpyAction();
+        automa = new AsyncAutoma(execService, start);
     }
 
     @After
@@ -53,17 +63,27 @@ public class TestAsyncAutoma extends AutomaTestCase {
     }
 
     @Test
-    public void shouldRunActionOnSeparateThread() throws Exception {
+    public void shouldExecuteActionOnSeparateThread() throws Exception {
         // setup
-        AutomaState start = nextState();
-        AutomaEvent event = nextEvent();
-        SpyAction action = new SpyAction();
         from(start).stay().when(event).andDo(action);
-        AsyncAutoma automa = new AsyncAutoma(execService, start);
         // exercise
         automa.signalEvent(event);
         // verify
         action.assertExecutedOnDifferentThread(Thread.currentThread());
     }
 
+    @Test
+    public void shouldChangeState() throws Exception {
+        // setup
+        AutomaState middle = nextState();
+        from(start).goTo(middle).when(event).andDoNothing();
+        from(middle).goTo(end).when(event).andDo(action);
+        // exercise
+        automa.signalEvent(event);
+        automa.signalEvent(event);
+        // verify
+        action.assertExecutedOnDifferentThread(Thread.currentThread());
+    }
+
 }
+

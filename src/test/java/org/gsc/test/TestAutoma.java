@@ -1,19 +1,18 @@
 package org.gsc.test;
 
-import org.gsc.automa.Automa;
-import org.gsc.automa.AutomaEvent;
-import org.gsc.automa.AutomaFactory;
-import org.gsc.automa.AutomaState;
-import org.gsc.automa.config.AutomaServiceDiscovery;
-import org.gsc.test.utils.FakeFileService;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.logging.Logger;
 
+import org.gsc.automa.Automa;
+import org.gsc.automa.AutomaEvent;
+import org.gsc.automa.AutomaState;
+import org.gsc.automa.EventValidator;
 import static org.gsc.automa.StateConnector.from;
+import org.gsc.automa.config.AutomaServiceDiscovery;
+import org.gsc.test.utils.AutomaTestCase;
+import org.gsc.test.utils.FakeFileService;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * Created with IntelliJ IDEA.
@@ -22,7 +21,7 @@ import static org.gsc.automa.StateConnector.from;
  * Time: 16.11
  * To change this template use File | Settings | File Templates.
  */
-public class TestAutoma extends Assert {
+public class TestAutoma extends AutomaTestCase {
 
     private class SpyAction implements Runnable {
         private int numOfExecution = 0;
@@ -39,7 +38,6 @@ public class TestAutoma extends Assert {
     }
 
     private Automa automa;
-    private AutomaFactory af;
     private AutomaEvent evtOne;
     private AutomaEvent evtTwo;
     private AutomaState start;
@@ -48,14 +46,19 @@ public class TestAutoma extends Assert {
 
     @Before
     public void before() {
-        AutomaConfiguration.setThreading(false);
-        evtOne = new AutomaEvent("evtOne");
-        evtTwo = new AutomaEvent("evtTwo");
+        super.setUp();
+        evtOne = nextEvent();
+        evtTwo = nextEvent();
+        start = nextState();
+        end = nextState();
         action = new SpyAction();
-        af = new AutomaFactory();
-        start = af.createState("start");
-        end = af.createState("end");
         automa = new Automa(start);
+    }
+
+    @After
+    public void after() {
+        super.tearDown();
+        automa.closeAutoma();
     }
 
     @Test
@@ -69,19 +72,9 @@ public class TestAutoma extends Assert {
     }
 
     @Test
-    public void shouldNotExecuteAction() throws Exception {
-        // setup
-        from(start).goTo(end).when(evtOne).andDo(action);
-        // exercise
-        automa.signalEvent(evtOne);
-        // verify
-        action.assertExecuted();
-    }
-
-    @Test
     public void shouldChangeState() throws Exception {
         // setup
-        AutomaState middle = af.createState("middle");
+        AutomaState middle = nextState();
         from(start).goTo(middle).when(evtOne).andDoNothing();
         from(middle).goTo(end).when(evtOne).andDo(action);
         // exercise
@@ -114,10 +107,28 @@ public class TestAutoma extends Assert {
     }
 
     @Test
-    public void shouldTransitIfEventObjectComparisionSucceed() {
+    public void shouldTransitIfEventObjectIsValid() {
         // setup
-        from(start).stay().when(evtOne).onlyIf( xxxxx  ).andDo(action);
+        EventValidator validator = new EventValidator() {
+            @Override public boolean validate(Object object) { return true; }
+        };
+        from(start).stay().when(evtOne).onlyIf(validator).andDo(action);
         // exercise
+        automa.signalEvent(evtOne);
         // verify
+        action.assertExecuted();
+    }
+
+    @Test
+    public void shouldNotTransitIfEventObjectIsNotValid() {
+        // setup
+        EventValidator validator = new EventValidator() {
+            @Override public boolean validate(Object object) { return false; }
+        };
+        from(start).stay().when(evtOne).onlyIf(validator).andDo(action);
+        // exercise
+        automa.signalEvent(evtOne);
+        // verify
+        action.assertExecuted(0);
     }
 }

@@ -14,20 +14,22 @@ public class StateConnectorInner {
     private AutomaState nextState;
     private ArrayList<AutomaEvent> events;
     private Runnable action = null;
-//  private Comparable<AutomaEvent> comparable;
+    private EventValidator validator;
 
-    private static class NullAction implements Runnable {
+    static private Runnable nullAction = new Runnable() {
         @Override public void run() { /* Do nothing */ }
-    }
+    };
 
-    static private NullAction nullAction = new NullAction();
+    static private EventValidator nullValidator = new EventValidator() {
+        @Override public boolean validate(Object obj) { return true; }
+    };
 
     private void reset() {
         startState = null;
         nextState = null;
         events = new ArrayList<AutomaEvent>();
-        action = null;
-//      comparable = null;
+        action = nullAction;
+        validator = nullValidator;
     }
 
     public StateConnectorInner from(AutomaState state) {
@@ -48,18 +50,14 @@ public class StateConnectorInner {
 
     public void andDo(Runnable action) {
         this.action = action;
-//      if (events == null) {
         for (AutomaEvent event: this.events) {
-                startState.transitionTo(nextState, event, /*comparable,*/ action);
+                startState.transitionTo(nextState, event, validator, action);
         }
-//      } else {
-//          startState.transitionTo(nextState, events, action);
-//      }
         reset();
     }
 
     public void andDoNothing() {
-        andDo(nullAction);
+        andDo(this.action);
     }
 
     public StateConnectorInner stay() {
@@ -74,8 +72,8 @@ public class StateConnectorInner {
         return this;
     }
 
-//  public StateConnectorInner onlyIf(Comparable<AutomaEvent> comparable) {
-//      this.comparable = comparable;
-//      return this;
-//  }
+    public StateConnectorInner onlyIf(EventValidator validator) {
+        this.validator = validator;
+        return this;
+    }
 }

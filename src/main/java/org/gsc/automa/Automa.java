@@ -16,9 +16,9 @@ import java.util.logging.Logger;
 public class Automa {
     private AutomaEvent lastEvent;
     private AutomaState currentState;
-//  private IOutputStreamService sequenceStream;
+    private IOutputStreamService sequenceStream;
     private Logger log = Logger.getLogger(getClass().getSimpleName());
-//  private boolean firstSignal = true;
+    private boolean firstSignal = true;
 
     /**
      * Automa constructor
@@ -27,7 +27,7 @@ public class Automa {
      */
     public Automa(AutomaState startState) {
         this.currentState = startState;
-//      sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
+        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
     }
 
     /**
@@ -40,37 +40,22 @@ public class Automa {
     }
 
     protected void handleEvent(AutomaEvent event) {
-//      Comparable<AutomaEvent> comparable;
         StateAction stateAction = currentState.getStateAction(event);
-
-//      if (stateAction != null) {
-//          comparable = stateAction.getComparable();
-//          if (comparable != null) {
-//              if (comparable.compareTo(event) != 0) {
-//                  return;
-//              }
-//          }
-//      } else {
-//          log.warning("Discard event " + event.toString() + " from state " + currentState.toString());
-//      }
-
-        lastEvent = event;
-//      if (stateAction != null) {
+        EventValidator validator = stateAction.getValidator();
+        if (validator.validate(event.getCurrentObject())) {
+            lastEvent = event;
             Runnable action = stateAction.getAction();
-//          AutomaState nextState = stateAction.getStatus();
-//          if (sequenceStream != null) {
-//              String str = currentState.toString() + " -> " + nextState.toString() + ": " + event.toString() + "\n";
-//              try {
-//                  sequenceStream.write(str);
-//              } catch (IOException e) {
-//              }
-//          }
-
-//          if (action != null) {
-                action.run();
-//          }
+            AutomaState nextState = stateAction.getStatus();
+            if (sequenceStream != null) {
+                String str = currentState.toString() + " -> " + nextState.toString() + ": " + event.toString() + "\n";
+                try {
+                    sequenceStream.write(str);
+                } catch (IOException e) {
+                }
+            }
+            action.run();
             currentState = stateAction.getStatus();
-//      }
+        }
     }
 
     /**
@@ -79,55 +64,36 @@ public class Automa {
      * @param event The event
      */
     public void signalEvent(final AutomaEvent event) {
-//      if (this.firstSignal) {
-//          setupAutomaConfig();
-//          this.firstSignal = false;
-//      }
-//      if (AutomaConfiguration.isThreading()) {
-//          IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
-//          Runnable job = new Runnable() {
-//              @Override
-//              public void run() {
-//                  handleEvent(event);
-//              }
-//          };
-//          if (executorService != null) {
-//              executorService.submitJob(job);
-//          } else {
-//              Logger.getAnonymousLogger().log(Level.SEVERE, "The automa is multithread but no executor service available");
-//          }
-//
-//      } else {
-            handleEvent(event);
-//      }
+        if (this.firstSignal) {
+            setupAutomaConfig();
+            this.firstSignal = false;
+        }
+        handleEvent(event);
     }
 
-//  private void setupAutomaConfig() {
-//      if (AutomaServiceDiscovery.getExecutorService() == null) {
-//          AutomaExecutorService executorService = new AutomaExecutorService();
-//          AutomaServiceDiscovery.setExecutorService(executorService);
-//      }
-//      if (AutomaServiceDiscovery.getOutputStreamService() == null) {
-//          AutomaServiceDiscovery.setOutputStreamService(new FileOutputStreamService());
-//          try {
-//              AutomaServiceDiscovery.getOutputStreamService().write("@startuml\n");
-//          } catch (IOException e) {
-//              Logger.getAnonymousLogger().log(Level.SEVERE, "File not available");
-//          }
-//      }
-//  }
+    private void setupAutomaConfig() {
+        if (AutomaServiceDiscovery.getOutputStreamService() == null) {
+            AutomaServiceDiscovery.setOutputStreamService(new FileOutputStreamService());
+            try {
+                AutomaServiceDiscovery.getOutputStreamService().write("@startuml\n");
+            } catch (IOException e) {
+                Logger.getAnonymousLogger().log(Level.SEVERE, "File not available");
+            }
+        }
+        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
+    }
 
     /**
      * This method should be called at the end of the execution of the automa.
      * It also writes @enduml at the end of the temporary file containing the sequence diagram.
      */
-//  public void closeAutoma() {
-//      Logger.getAnonymousLogger().info("Closing automa on state " + currentState);
-//      if (sequenceStream != null) {
-//          try {
-//              sequenceStream.write("@enduml");
-//          } catch (IOException e) {
-//          }
-//      }
-//  }
+    public void closeAutoma() {
+        Logger.getAnonymousLogger().info("Closing automa on state " + currentState);
+        if (sequenceStream != null) {
+            try {
+                sequenceStream.write("@enduml");
+            } catch (IOException e) {
+            }
+        }
+    }
 }

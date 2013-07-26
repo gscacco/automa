@@ -46,8 +46,4 @@ public class AsyncAutoma extends Automa {
       super.handleEvent(event);
     }
 
-    @Override
-    public void closeAutoma() {
-        super.closeAutoma();
-    }
 }

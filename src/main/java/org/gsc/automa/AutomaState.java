@@ -17,25 +17,6 @@ public class AutomaState {
         this.name = name;
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent event, Runnable action) {
-        map.put(event, new StateAction(state, action));
-    }
-
-//  public void transitionTo(AutomaState state, AutomaEvent events[], Runnable action) {
-//      for (AutomaEvent event : events) {
-//          transitionTo(state, event, action);
-//      }
-//  }
-
-    public void stay(AutomaEvent event, Runnable action) {
-        map.put(event, new StateAction(this, action));
-    }
-
-    @Override
-    public String toString() {
-        return name;
-    }
-
     public StateAction getStateAction(AutomaEvent event) {
         StateAction action = map.get(event);
         if (action == null) {
@@ -44,13 +25,13 @@ public class AutomaState {
         return action;
     }
 
-//  public void stay(AutomaEvent[] events, Runnable action) {
-//      for (AutomaEvent event : events) {
-//          stay(event, action);
-//      }
-//  }
+    public void transitionTo(AutomaState state, AutomaEvent event, EventValidator validator, Runnable action) {
+        map.put(event, new StateAction(state, action, validator));
+    }
 
-//  public void transitionTo(AutomaState state, AutomaEvent event, Comparable<AutomaEvent> comparable, Runnable action) {
-//      map.put(event, new StateAction(state, action, comparable));
-//  }
+    @Override
+    public String toString() {
+        return name;
+    }
+
 }
