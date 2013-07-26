@@ -21,11 +21,11 @@ public class AutomaState {
         map.put(event, new StateAction(state, action));
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent events[], Runnable action) {
-        for (AutomaEvent event : events) {
-            transitionTo(state, event, action);
-        }
-    }
+//  public void transitionTo(AutomaState state, AutomaEvent events[], Runnable action) {
+//      for (AutomaEvent event : events) {
+//          transitionTo(state, event, action);
+//      }
+//  }
 
     public void stay(AutomaEvent event, Runnable action) {
         map.put(event, new StateAction(this, action));
@@ -37,16 +37,20 @@ public class AutomaState {
     }
 
     public StateAction getStateAction(AutomaEvent event) {
-        return map.get(event);
-    }
-
-    public void stay(AutomaEvent[] events, Runnable action) {
-        for (AutomaEvent event : events) {
-            stay(event, action);
+        StateAction action = map.get(event);
+        if (action == null) {
+            throw new RuntimeException(String.format("Unmapped event %s from state %s", event, this.name));
         }
+        return action;
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent event, Comparable<AutomaEvent> comparable, Runnable action) {
-        map.put(event, new StateAction(state, action, comparable));
-    }
+//  public void stay(AutomaEvent[] events, Runnable action) {
+//      for (AutomaEvent event : events) {
+//          stay(event, action);
+//      }
+//  }
+
+//  public void transitionTo(AutomaState state, AutomaEvent event, Comparable<AutomaEvent> comparable, Runnable action) {
+//      map.put(event, new StateAction(state, action, comparable));
+//  }
 }

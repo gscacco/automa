@@ -10,18 +10,18 @@ package org.gsc.automa;
 public class StateAction {
     private final AutomaState state;
     private final Runnable action;
-    private Comparable<AutomaEvent> comparable;
+//  private Comparable<AutomaEvent> comparable;
 
     public StateAction(AutomaState state, Runnable action) {
         this.state = state;
         this.action = action;
     }
 
-    public StateAction(AutomaState state, Runnable action, Comparable<AutomaEvent> comparable) {
-        this.state = state;
-        this.action = action;
-        this.comparable = comparable;
-    }
+//  public StateAction(AutomaState state, Runnable action, Comparable<AutomaEvent> comparable) {
+//      this.state = state;
+//      this.action = action;
+//      this.comparable = comparable;
+//  }
 
     public Runnable getAction() {
         return action;
@@ -31,7 +31,7 @@ public class StateAction {
         return state;
     }
 
-    public Comparable<AutomaEvent> getComparable() {
-        return comparable;
-    }
+//  public Comparable<AutomaEvent> getComparable() {
+//      return comparable;
+//  }
 }

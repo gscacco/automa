@@ -1,5 +1,7 @@
 package org.gsc.automa;
 
+import java.util.ArrayList;
+
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -10,18 +12,22 @@ package org.gsc.automa;
 public class StateConnectorInner {
     private AutomaState startState;
     private AutomaState nextState;
-    private AutomaEvent event;
+    private ArrayList<AutomaEvent> events;
     private Runnable action = null;
-    private AutomaEvent[] events;
-    private Comparable<AutomaEvent> comparable;
+//  private Comparable<AutomaEvent> comparable;
+
+    private static class NullAction implements Runnable {
+        @Override public void run() { /* Do nothing */ }
+    }
+
+    static private NullAction nullAction = new NullAction();
 
     private void reset() {
         startState = null;
         nextState = null;
-        event = null;
+        events = new ArrayList<AutomaEvent>();
         action = null;
-        events = null;
-        comparable = null;
+//      comparable = null;
     }
 
     public StateConnectorInner from(AutomaState state) {
@@ -36,28 +42,24 @@ public class StateConnectorInner {
     }
 
     public StateConnectorInner when(AutomaEvent event) {
-        this.event = event;
+        this.events.add(event);
         return this;
     }
 
     public void andDo(Runnable action) {
         this.action = action;
-        if (events == null) {
-            startState.transitionTo(nextState, event, comparable, action);
-        } else {
-            startState.transitionTo(nextState, events, action);
+//      if (events == null) {
+        for (AutomaEvent event: this.events) {
+                startState.transitionTo(nextState, event, /*comparable,*/ action);
         }
+//      } else {
+//          startState.transitionTo(nextState, events, action);
+//      }
         reset();
     }
 
     public void andDoNothing() {
-        this.action = null;
-        if (events == null) {
-            startState.transitionTo(nextState, event, comparable, action);
-        } else {
-            startState.transitionTo(nextState, events, action);
-        }
-        reset();
+        andDo(nullAction);
     }
 
     public StateConnectorInner stay() {
@@ -66,12 +68,14 @@ public class StateConnectorInner {
     }
 
     public StateConnectorInner forEach(AutomaEvent[] events) {
-        this.events = events;
+        for (AutomaEvent event: events) {
+            this.events.add(event);
+        }
         return this;
     }
 
-    public StateConnectorInner onlyIf(Comparable<AutomaEvent> comparable) {
-        this.comparable = comparable;
-        return this;
-    }
+//  public StateConnectorInner onlyIf(Comparable<AutomaEvent> comparable) {
+//      this.comparable = comparable;
+//      return this;
+//  }
 }
