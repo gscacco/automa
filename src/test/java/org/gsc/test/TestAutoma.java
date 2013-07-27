@@ -3,8 +3,6 @@ package org.gsc.test;
 import org.gsc.automa.Automa;
 import org.gsc.automa.EventValidator;
 import org.gsc.test.utils.AutomaTestCase;
-import org.gsc.test.utils.AutomaTestCase.FakeEvent;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -20,7 +18,10 @@ public class TestAutoma extends AutomaTestCase {
     private class SpyAction implements Runnable {
         private int numOfExecution = 0;
 
-        @Override public void run() { numOfExecution++; }
+        @Override
+        public void run() {
+            numOfExecution++;
+        }
 
         public void assertExecuted() {
             assertTrue("Action not executed", numOfExecution > 0);
@@ -37,7 +38,7 @@ public class TestAutoma extends AutomaTestCase {
     @Before
     public void before() {
         action = new SpyAction();
-        automa = new Automa(FakeState.STATE_1, FakeEvent.class);
+        automa = new Automa(FakeState.STATE_1);
     }
 
     @Test
@@ -88,7 +89,10 @@ public class TestAutoma extends AutomaTestCase {
     public void shouldTransitIfEventObjectIsValid() {
         // setup
         EventValidator validator = new EventValidator() {
-            @Override public boolean validate(Object object) { return true; }
+            @Override
+            public boolean validate(Object object) {
+                return true;
+            }
         };
         automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
         // exercise
@@ -101,7 +105,10 @@ public class TestAutoma extends AutomaTestCase {
     public void shouldNotTransitIfEventObjectIsNotValid() {
         // setup
         EventValidator validator = new EventValidator() {
-            @Override public boolean validate(Object object) { return false; }
+            @Override
+            public boolean validate(Object object) {
+                return false;
+            }
         };
         automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
         // exercise
@@ -112,16 +119,16 @@ public class TestAutoma extends AutomaTestCase {
 
     @Test
     public void shouldProvideTheLastEventSignalled() {
-      // setup
-      automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
-      // exercise
-      automa.signalEvent(FakeEvent.EVENT_1);
-      // verify
-      assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
+        // setup
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void shouldThrowRuntimeExceptionForUnmappedEvent() {
-      automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
     }
 }

@@ -16,15 +16,14 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * Automa constructor
      *
      * @param startState The start state of the automa
-     * @param eventClass The class of the event being signalled by this automa.
      */
-    public Automa(STATE startState, Class<EVENT> eventClass) {
+    public Automa(STATE startState) {
         this.currentState = startState;
         STATE[] enumStates = (STATE[]) startState.getClass().getEnumConstants();
         int numOfStates = enumStates.length;
         states = new AutomaState[numOfStates];
         for (int i = 0; i < numOfStates; i++) {
-            states[i] = new AutomaState(enumStates[i], eventClass);
+            states[i] = new AutomaState(enumStates[i]);
         }
     }
 
