@@ -12,7 +12,7 @@ import java.util.HashMap;
 public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
     private STATE state;
-    private HashMap<EVENT, Transition<STATE>> transitions = new HashMap<EVENT, Transition<STATE>>();
+    private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
 
     public AutomaState(STATE state) {
         this.state = state;
@@ -23,7 +23,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     }
 
     public Transition getTransition(EVENT event) {
-        Transition t = transitions.get(event);
+        Transition t = transitions.get(event.ordinal());
         if (t == null) {
             throw new RuntimeException(String.format("Unmapped event %s from state %s", event, state));
         }
@@ -31,7 +31,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     }
 
     public void transitTo(STATE endState, EVENT event, EventValidator validator, Runnable action) {
-        transitions.put(event, new Transition(endState, action, validator));
+        transitions.put(event.ordinal(), new Transition(endState, action, validator));
     }
 
 }
