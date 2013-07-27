@@ -1,6 +1,10 @@
 package org.gsc.automa;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import java.util.concurrent.ExecutorService;
+import org.omg.CORBA.TIMEOUT;
 
 /**
  * Extends Automa to provide an asynchronous automa, that is an 
@@ -10,10 +14,29 @@ import java.util.concurrent.ExecutorService;
  */
 public class AsyncAutoma<STATE extends Enum, EVENT extends Enum> extends Automa<STATE, EVENT> {
 
+    private class AsyncEvent<EVENT> {
+        EVENT event;
+        Object payload;
+        AsyncEvent(EVENT event, Object payload) {
+            this.event = event;
+            this.payload = payload;
+        }
+    }
+
     /** 
-     * The executor service to submit action jobs to. 
+     * The thread on which executes actions on.
      */
-    private ExecutorService execService;
+    private Thread _thread;
+
+    /**
+     * The queue of the signalled events to handle.
+     */
+    private BlockingQueue<AsyncEvent> _eventsQueue;
+
+    /**
+     * The flag to stop the thread.
+     */
+    private AtomicBoolean _stopped;
 
     /**
      * Construct an AsyncAutoma.
@@ -24,23 +47,52 @@ public class AsyncAutoma<STATE extends Enum, EVENT extends Enum> extends Automa<
      * @param startState  The automa's start state.
      * @param eventClass The class of the event being signalled by this automa.
      */
-    public AsyncAutoma(ExecutorService execService, STATE startState, Class<EVENT> eventClass) {
+    public AsyncAutoma(STATE startState, Class<EVENT> eventClass) {
         super(startState, eventClass);
-        this.execService = execService;
+        _stopped = new AtomicBoolean(false);
+        _eventsQueue = new LinkedBlockingQueue<AsyncEvent>();
+        _thread = new Thread(new Runnable(){
+                @Override
+                public void run() {
+                    while ( ! _stopped.get()) {
+                        try { 
+                          AsyncEvent<EVENT> asyncEvent = _eventsQueue.take(); 
+                          // A null event unblocks the queue to stop the thread
+                          if (asyncEvent.event != null) {
+                            handleEvent(asyncEvent.event, asyncEvent.payload);
+                          }
+                        } catch (InterruptedException e) {
+                            /* Do nothing */
+                        }
+                    }
+                }
+            });
+        _thread.start();
     }
 
     /**
-     * Overrides the handleEvent to just delegate the parent 
-     * implementation on a separate thread. 
+     * Overrides the the parent implementation to handle the 
+     * automa's internal thread. 
+     *  
+     * @param event The event to signal. 
+     * @param param A payload to associate with the event. 
      */
     @Override
-    public void signalEvent(final EVENT event) {
-        this.execService.submit(new Runnable() {
-            @Override
-            public void run() {
-                handleEvent(event, new Object());
-            }
-        });
+    public void signalEvent(EVENT event, Object payload) {
+        try { 
+          _eventsQueue.put(new AsyncEvent(event, payload));
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
+    public void closeAutoma() {
+        _stopped.set(true);
+        try { 
+          _eventsQueue.put(new AsyncEvent(null, null));
+          _thread.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

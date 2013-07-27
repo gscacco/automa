@@ -1,14 +1,10 @@
 package org.gsc.test;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
 import org.gsc.automa.AsyncAutoma;
 import org.gsc.test.utils.AutomaTestCase;
 import org.gsc.test.utils.AutomaTestCase.FakeEvent;
 import org.gsc.test.utils.AutomaTestCase.FakeState;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -28,33 +24,27 @@ public class TestAsyncAutoma extends AutomaTestCase {
         }
 
         synchronized public void assertExecutedOnDifferentThread(Thread t)
-                throws Exception {
+        throws Exception {
             wait(500);
             assertTrue("Action not executed", tid != 0);
             assertTrue("Action TID equals test one", tid != t.getId());
         }
     }
 
-    private ExecutorService execService;
-    private SpyAction action;
     private AsyncAutoma automa;
-
-    @Before
-    public void before() {
-        execService = Executors.newFixedThreadPool(1);
-        action = new SpyAction();
-        automa = new AsyncAutoma(execService, FakeState.STATE_1, FakeEvent.class);
-    }
 
     @After
     public void after() {
-        execService.shutdownNow();
+        automa.closeAutoma();
     }
 
     @Test
     public void shouldExecuteActionOnSeparateThread() throws Exception {
         // setup
-        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
+        SpyAction action = new SpyAction();
+        automa = new AsyncAutoma(FakeState.STATE_1, FakeEvent.class);
+        automa.from(FakeState.STATE_1).stay()
+              .when(FakeEvent.EVENT_1).andDo(action);
         // exercise
         automa.signalEvent(FakeEvent.EVENT_1);
         // verify

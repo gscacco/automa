@@ -81,7 +81,17 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event The event
      */
     public void signalEvent(EVENT event) {
-        handleEvent(event, new Object());
+        signalEvent(event, new Object());
+    }
+
+    /**
+     * Signal an event to the automa.
+     *
+     * @param event The event to signal. 
+     * @param payload A payload to associate with the event. 
+     */
+    public void signalEvent(EVENT event, Object payload) {
+        handleEvent(event, payload);
     }
 
 }
