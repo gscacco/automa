@@ -2,12 +2,12 @@ package org.gsc.automa;
 import java.io.IOException;
 import java.io.Writer;
 
-public class UmlWriterAutoma extends Automa {
-  
+public class UmlWriterAutoma<STATE extends Enum, EVENT extends Enum> extends Automa<STATE, EVENT> {
+
     private Writer _writer;
 
-    public UmlWriterAutoma(AutomaState startState, Writer writer) {
-      super(startState);
+    public UmlWriterAutoma(STATE startState, Class<EVENT> eventClass, Writer writer) {
+      super(startState, eventClass);
       _writer = writer;
       try { 
         _writer.write("@startuml\n");
@@ -21,8 +21,8 @@ public class UmlWriterAutoma extends Automa {
      * to the underlying writer. 
      */
     @Override
-    protected void transit(AutomaState startState, AutomaState endState,
-                           Runnable action, AutomaEvent event) {
+    protected void transit(STATE startState, STATE endState,
+                           Runnable action, EVENT event) {
       try { 
         _writer.write(String.format("%s -> %s : %s\n", 
                                     startState, 

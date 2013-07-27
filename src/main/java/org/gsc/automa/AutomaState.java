@@ -9,29 +9,30 @@ import java.util.HashMap;
  * Time: 16.44
  * To change this template use File | Settings | File Templates.
  */
-public class AutomaState {
-    private String name;
-    private HashMap<AutomaEvent, StateAction> map = new HashMap<AutomaEvent, StateAction>();
+public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
-    public AutomaState(String name) {
-        this.name = name;
+    private STATE state;
+    private Transition[] transitions;
+
+    public AutomaState(STATE state, Class<EVENT> eventClass) {
+        this.state = state;
+        this.transitions = new Transition[eventClass.getEnumConstants().length];
     }
 
-    public StateAction getStateAction(AutomaEvent event) {
-        StateAction action = map.get(event);
-        if (action == null) {
-            throw new RuntimeException(String.format("Unmapped event %s from state %s", event, this.name));
+    public STATE getState() {
+      return state;
+    }
+
+    public Transition getTransition(EVENT event) {
+        Transition t = transitions[event.ordinal()];
+        if (t == null) {
+            throw new RuntimeException(String.format("Unmapped event %s from state %s", event, state));
         }
-        return action;
+        return t;
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent event, EventValidator validator, Runnable action) {
-        map.put(event, new StateAction(state, action, validator));
-    }
-
-    @Override
-    public String toString() {
-        return name;
+    public void transitTo(STATE endState, EVENT event, EventValidator validator, Runnable action) {
+        transitions[event.ordinal()] = new Transition(endState, action, validator);
     }
 
 }

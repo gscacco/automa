@@ -7,17 +7,25 @@ package org.gsc.automa;
  * Time: 16.43
  * To change this template use File | Settings | File Templates.
  */
-public class Automa {
-    private AutomaEvent lastEvent;
-    private AutomaState currentState;
+public class Automa<STATE extends Enum, EVENT extends Enum> {
+    private EVENT lastEvent;
+    private STATE currentState;
+    private AutomaState[] states;
 
     /**
      * Automa constructor
      *
-     * @param startState The start state of the automa
+     * @param startState The start state of the automa 
+     * @param eventClass The class of the event being signalled by this automa.
      */
-    public Automa(AutomaState startState) {
+    public Automa(STATE startState, Class<EVENT> eventClass) {
         this.currentState = startState;
+        STATE[] enumStates = (STATE[])startState.getClass().getEnumConstants();
+        int numOfStates = enumStates.length;
+        states = new AutomaState[numOfStates];
+        for (int i=0; i < numOfStates; i++) {
+            states[i] = new AutomaState(enumStates[i], eventClass);
+        }
     }
 
     /**
@@ -25,8 +33,12 @@ public class Automa {
      *
      * @return The last event
      */
-    public AutomaEvent getLastEvent() {
+    public EVENT getLastEvent() {
         return lastEvent;
+    }
+
+    public StateConnector<STATE, EVENT> from(STATE startState) {
+        return new StateConnector<STATE, EVENT>(states[startState.ordinal()]);
     }
 
     /**
@@ -35,14 +47,15 @@ public class Automa {
      * related new state. However if the validation of the event 
      * object fails, the transition won't take place. 
      * 
-     * @param event The event to handle.
+     * @param event The event to handle. 
+     * @param payload An optional payload associated with the signal.
      */
-    protected void handleEvent(AutomaEvent event) {
-        StateAction stateAction = currentState.getStateAction(event);
-        EventValidator validator = stateAction.getValidator();
-        if (validator.validate(event.getCurrentObject())) {
-            Runnable action = stateAction.getAction();
-            transit(currentState, stateAction.getStatus(), action, event);
+    protected void handleEvent(EVENT event, Object payload) {
+        Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
+        EventValidator validator = transition.getValidator();
+        if (validator.validate(payload)) {
+            Runnable action = transition.getAction();
+            transit(currentState, transition.getEndState(), action, event);
         }
     }
 
@@ -55,8 +68,8 @@ public class Automa {
      * @param action The action to be executed along this transition. 
      * @param event The event which has triggered the transisition. 
      */
-    protected void transit(AutomaState startState, AutomaState endState,
-                           Runnable action, AutomaEvent event) {
+    protected void transit(STATE startState, STATE endState,
+                           Runnable action, EVENT event) {
       lastEvent = event;
       action.run();
       currentState = endState;
@@ -67,8 +80,8 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(AutomaEvent event) {
-        handleEvent(event);
+    public void signalEvent(EVENT event) {
+        handleEvent(event, new Object());
     }
 
 }

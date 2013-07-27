@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
  * 
  * @author raffaelerossi (7/24/2013)
  */
-public class AsyncAutoma extends Automa {
+public class AsyncAutoma<STATE extends Enum, EVENT extends Enum> extends Automa<STATE, EVENT> {
 
     /** 
      * The executor service to submit action jobs to. 
@@ -22,9 +22,10 @@ public class AsyncAutoma extends Automa {
      * 
      * @param execService The executor service to submit action jobs to.
      * @param startState  The automa's start state.
+     * @param eventClass The class of the event being signalled by this automa.
      */
-    public AsyncAutoma(ExecutorService execService, AutomaState startState) {
-        super(startState);
+    public AsyncAutoma(ExecutorService execService, STATE startState, Class<EVENT> eventClass) {
+        super(startState, eventClass);
         this.execService = execService;
     }
 
@@ -33,11 +34,11 @@ public class AsyncAutoma extends Automa {
      * implementation on a separate thread. 
      */
     @Override
-    public void signalEvent(final AutomaEvent event) {
+    public void signalEvent(final EVENT event) {
         this.execService.submit(new Runnable() {
             @Override
             public void run() {
-                handleEvent(event);
+                handleEvent(event, new Object());
             }
         });
     }

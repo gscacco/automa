@@ -1,11 +1,9 @@
 package org.gsc.test;
 
 import org.gsc.automa.Automa;
-import org.gsc.automa.AutomaEvent;
-import org.gsc.automa.AutomaState;
 import org.gsc.automa.EventValidator;
-import static org.gsc.automa.StateConnector.from;
 import org.gsc.test.utils.AutomaTestCase;
+import org.gsc.test.utils.AutomaTestCase.FakeEvent;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,29 +32,20 @@ public class TestAutoma extends AutomaTestCase {
     }
 
     private Automa automa;
-    private AutomaEvent evtOne;
-    private AutomaEvent evtTwo;
-    private AutomaState start;
-    private AutomaState end;
     private SpyAction action;
 
     @Before
     public void before() {
-        super.before();
-        evtOne = nextEvent();
-        evtTwo = nextEvent();
-        start = nextState();
-        end = nextState();
         action = new SpyAction();
-        automa = new Automa(start);
+        automa = new Automa(FakeState.STATE_1, FakeEvent.class);
     }
 
     @Test
     public void shouldExecuteAction() throws Exception {
         // setup
-        from(start).goTo(end).when(evtOne).andDo(action);
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
         // verify
         action.assertExecuted();
     }
@@ -64,12 +53,11 @@ public class TestAutoma extends AutomaTestCase {
     @Test
     public void shouldChangeState() throws Exception {
         // setup
-        AutomaState middle = nextState();
-        from(start).goTo(middle).when(evtOne).andDoNothing();
-        from(middle).goTo(end).when(evtOne).andDo(action);
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        automa.from(FakeState.STATE_2).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
         // verify
         action.assertExecuted();
     }
@@ -77,10 +65,10 @@ public class TestAutoma extends AutomaTestCase {
     @Test
     public void shouldStayOnSameState() {
         // setup
-        from(start).stay().when(evtOne).andDo(action);
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
         // verify
         action.assertExecuted(2);
     }
@@ -88,10 +76,10 @@ public class TestAutoma extends AutomaTestCase {
     @Test
     public void shouldDoTheSameActionForMultipleEvents() {
         // setup
-        from(start).stay().forEach(new AutomaEvent[]{evtOne, evtTwo}).andDo(action);
+        automa.from(FakeState.STATE_1).stay().forEach(FakeEvent.EVENT_1, FakeEvent.EVENT_2).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
-        automa.signalEvent(evtTwo);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_2);
         // verify
         action.assertExecuted(2);
     }
@@ -102,9 +90,9 @@ public class TestAutoma extends AutomaTestCase {
         EventValidator validator = new EventValidator() {
             @Override public boolean validate(Object object) { return true; }
         };
-        from(start).stay().when(evtOne).onlyIf(validator).andDo(action);
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
         // verify
         action.assertExecuted();
     }
@@ -115,10 +103,25 @@ public class TestAutoma extends AutomaTestCase {
         EventValidator validator = new EventValidator() {
             @Override public boolean validate(Object object) { return false; }
         };
-        from(start).stay().when(evtOne).onlyIf(validator).andDo(action);
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
         // exercise
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
         // verify
         action.assertExecuted(0);
+    }
+
+    @Test
+    public void shouldProvideTheLastEventSignalled() {
+      // setup
+      automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
+      // exercise
+      automa.signalEvent(FakeEvent.EVENT_1);
+      // verify
+      assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
+    }
+
+    @Test(expected=RuntimeException.class)
+    public void shouldThrowRuntimeExceptionForUnmappedEvent() {
+      automa.signalEvent(FakeEvent.EVENT_1);
     }
 }
