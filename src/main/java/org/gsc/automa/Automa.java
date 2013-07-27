@@ -15,15 +15,15 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     /**
      * Automa constructor
      *
-     * @param startState The start state of the automa 
+     * @param startState The start state of the automa
      * @param eventClass The class of the event being signalled by this automa.
      */
     public Automa(STATE startState, Class<EVENT> eventClass) {
         this.currentState = startState;
-        STATE[] enumStates = (STATE[])startState.getClass().getEnumConstants();
+        STATE[] enumStates = (STATE[]) startState.getClass().getEnumConstants();
         int numOfStates = enumStates.length;
         states = new AutomaState[numOfStates];
-        for (int i=0; i < numOfStates; i++) {
+        for (int i = 0; i < numOfStates; i++) {
             states[i] = new AutomaState(enumStates[i], eventClass);
         }
     }
@@ -42,12 +42,12 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     /**
-     * Handle an automa event by executing the action associated 
-     * with the state transition and then transit the automa to the 
-     * related new state. However if the validation of the event 
-     * object fails, the transition won't take place. 
-     * 
-     * @param event The event to handle. 
+     * Handle an automa event by executing the action associated
+     * with the state transition and then transit the automa to the
+     * related new state. However if the validation of the event
+     * object fails, the transition won't take place.
+     *
+     * @param event   The event to handle.
      * @param payload An optional payload associated with the signal.
      */
     protected void handleEvent(EVENT event, Object payload) {
@@ -60,19 +60,19 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     /**
-     * Transit from a state to its following one and execute the 
+     * Transit from a state to its following one and execute the
      * action associated with the transition.
-     * 
+     *
      * @param startState The state the transition starts from.
-     * @param endState The state the transition ends to.
-     * @param action The action to be executed along this transition. 
-     * @param event The event which has triggered the transisition. 
+     * @param endState   The state the transition ends to.
+     * @param action     The action to be executed along this transition.
+     * @param event      The event which has triggered the transisition.
      */
     protected void transit(STATE startState, STATE endState,
                            Runnable action, EVENT event) {
-      lastEvent = event;
-      action.run();
-      currentState = endState;
+        lastEvent = event;
+        action.run();
+        currentState = endState;
     }
 
     /**
@@ -80,17 +80,17 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      *
      * @param event The event
      */
-    public void signalEvent(EVENT event) {
+    public synchronized void signalEvent(EVENT event) {
         signalEvent(event, new Object());
     }
 
     /**
      * Signal an event to the automa.
      *
-     * @param event The event to signal. 
-     * @param payload A payload to associate with the event. 
+     * @param event   The event to signal.
+     * @param payload A payload to associate with the event.
      */
-    public void signalEvent(EVENT event, Object payload) {
+    public synchronized void signalEvent(EVENT event, Object payload) {
         handleEvent(event, payload);
     }
 
