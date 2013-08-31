@@ -51,8 +51,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     protected void handleEvent(EVENT event, Object payload) {
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
-        EventValidator validator = transition.getValidator();
-        if (validator.validate(payload)) {
+        if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
             transit(currentState, transition.getEndState(), action, event);
         }

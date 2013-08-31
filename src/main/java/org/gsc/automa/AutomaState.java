@@ -23,11 +23,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     }
 
     public Transition getTransition(EVENT event) {
-        Transition t = transitions.get(event.ordinal());
-        if (t == null) {
-            throw new RuntimeException(String.format("Unmapped event %s from state %s", event, state));
-        }
-        return t;
+        return transitions.get(event.ordinal());
     }
 
     public void transitTo(STATE endState, EVENT event, EventValidator validator, Runnable action) {

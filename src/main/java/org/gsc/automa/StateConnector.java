@@ -45,7 +45,7 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     public void andDo(Runnable action) {
         this.action = action;
         for (EVENT event: this.events) {
-                startState.transitTo(nextState, event, validator, action);
+            startState.transitTo(nextState, event, validator, action);
         }
     }
 

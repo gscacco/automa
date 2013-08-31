@@ -127,8 +127,8 @@ public class TestAutoma extends AutomaTestCase {
         assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
     }
 
-    @Test(expected = RuntimeException.class)
-    public void shouldThrowRuntimeExceptionForUnmappedEvent() {
+    @Test
+    public void shouldIgnoreUnmappedEvent() {
         automa.signalEvent(FakeEvent.EVENT_1);
     }
 }
