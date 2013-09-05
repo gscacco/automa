@@ -11,6 +11,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private EVENT lastEvent;
     private STATE currentState;
     private AutomaState[] states;
+    private Object payload;
 
     /**
      * Automa constructor
@@ -50,6 +51,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param payload An optional payload associated with the signal.
      */
     protected void handleEvent(EVENT event, Object payload) {
+        this.payload=payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
@@ -91,5 +93,10 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     public synchronized void signalEvent(EVENT event, Object payload) {
         handleEvent(event, payload);
     }
+
+    public Object getPayload() {
+        return payload;
+    }
+
 
 }

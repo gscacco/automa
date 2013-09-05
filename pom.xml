@@ -6,7 +6,7 @@
 
     <groupId>org.gsc</groupId>
     <artifactId>automa</artifactId>
-    <version>0.40</version>
+    <version>0.41</version>
     <build>
         <plugins>
             <plugin>

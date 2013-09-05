@@ -30,6 +30,8 @@ public class TestAutoma extends AutomaTestCase {
         public void assertExecuted(int expectedNumber) {
             assertEquals("Number of executions", expectedNumber, numOfExecution);
         }
+
+
     }
 
     private Automa automa;
@@ -131,4 +133,29 @@ public class TestAutoma extends AutomaTestCase {
     public void shouldIgnoreUnmappedEvent() {
         automa.signalEvent(FakeEvent.EVENT_1);
     }
+
+
+    @Test
+    public void shouldRetrievePayload() {
+        final Object payload = new Object();
+
+        class MyAction implements Runnable {
+            public boolean executed = false;
+
+            @Override
+            public void run() {
+                executed = true;
+                assertEquals(payload, automa.getPayload());
+            }
+        }
+        MyAction testAction = new MyAction();
+
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(testAction);
+        automa.signalEvent(FakeEvent.EVENT_1, payload);
+
+        assertTrue(testAction.executed);
+    }
+
 }
+
+
