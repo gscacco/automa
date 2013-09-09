@@ -1,5 +1,7 @@
 package org.gsc.automa;
 
+import java.util.logging.Logger;
+
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -12,6 +14,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private STATE currentState;
     private AutomaState[] states;
     private Object payload;
+    private Logger log = Logger.getLogger(getClass().getSimpleName());
 
     /**
      * Automa constructor
@@ -57,6 +60,10 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
             Runnable action = transition.getAction();
             transit(currentState, transition.getEndState(), action, event);
         }
+        else
+        {
+            log.warning("Discard event " + event.toString() + " from state " + currentState.toString());
+        }
     }
 
     /**
@@ -71,8 +78,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     protected void transit(STATE startState, STATE endState,
                            Runnable action, EVENT event) {
         lastEvent = event;
-        action.run();
+        log.info("State transition from  "+currentState + " to "+ endState+" on event "+event);
         currentState = endState;
+        action.run();
     }
 
     /**
