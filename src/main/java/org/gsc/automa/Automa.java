@@ -112,7 +112,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param state  The state.
      * @param action The action to be executed.
      */
-    public void onEntering(STATE state, Runnable action) {
+    public void onceIn(STATE state, Runnable action) {
         entryActions.put(state, action);
     }
 
@@ -122,7 +122,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param state  The state.
      * @param action The action to be executed.
      */
-    public void onLeaving(STATE state, Runnable action) {
+    public void onceOut(STATE state, Runnable action) {
         exitActions.put(state, action);
     }
 }
