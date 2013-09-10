@@ -45,7 +45,7 @@ public class TestAutomaEntryExitActions {
     public void shouldHandleEntryAction() {
         SpyAction action = new SpyAction();
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
-        automa.onceEntered(States.RUNNING).executeAction(action);
+        automa.onceIn(States.RUNNING).executeAction(action);
 
         automa.signalEvent(Events.EVENT_ONE);
 
@@ -57,10 +57,23 @@ public class TestAutomaEntryExitActions {
         SpyAction action = new SpyAction();
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
         automa.from(States.RUNNING).stay().when(Events.EVENT_TWO).andDoNothing();
-        automa.onceEntered(States.RUNNING).executeAction(action);
+        automa.onceIn(States.RUNNING).executeAction(action);
 
         automa.signalEvent(Events.EVENT_ONE);
         automa.signalEvent(Events.EVENT_TWO);
+        action.assertExecuted(1);
+    }
+
+    @Test
+    public void shouldHandleExitAction() {
+        SpyAction action = new SpyAction();
+        automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
+        automa.from(States.RUNNING).goTo(States.IDLE).when(Events.EVENT_TWO).andDoNothing();
+        automa.onceOut(States.RUNNING).executeAction(action);
+
+        automa.signalEvent(Events.EVENT_ONE);
+        automa.signalEvent(Events.EVENT_TWO);
+
         action.assertExecuted(1);
     }
 
