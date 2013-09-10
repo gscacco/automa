@@ -3,6 +3,7 @@ package org.gsc.test;
 import org.gsc.automa.Automa;
 import org.gsc.automa.EventValidator;
 import org.gsc.test.utils.AutomaTestCase;
+import org.gsc.test.utils.SpyAction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,25 +15,6 @@ import org.junit.Test;
  * To change this template use File | Settings | File Templates.
  */
 public class TestAutoma extends AutomaTestCase {
-
-    private class SpyAction implements Runnable {
-        private int numOfExecution = 0;
-
-        @Override
-        public void run() {
-            numOfExecution++;
-        }
-
-        public void assertExecuted() {
-            assertTrue("Action not executed", numOfExecution > 0);
-        }
-
-        public void assertExecuted(int expectedNumber) {
-            assertEquals("Number of executions", expectedNumber, numOfExecution);
-        }
-
-
-    }
 
     private Automa automa;
     private SpyAction action;

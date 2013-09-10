@@ -2,6 +2,7 @@ package org.gsc.test;
 
 import junit.framework.Assert;
 import org.gsc.automa.Automa;
+import org.gsc.test.utils.SpyAction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -19,19 +20,6 @@ public class TestAutomaEntryExitActions {
     private enum Events {
         EVENT_TWO, EVENT_ONE
 
-    }
-
-    private class SpyAction implements Runnable {
-        private int numExecuted = 0;
-
-        @Override
-        public void run() {
-            numExecuted++;
-        }
-
-        public void assertExecuted(int num) {
-            Assert.assertTrue("Action executed", numExecuted == num);
-        }
     }
 
     private Automa<States, Events> automa;
