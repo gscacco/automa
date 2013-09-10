@@ -1,10 +1,5 @@
 package org.gsc.automa;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.gsc.automa.EntryExit.Type;
-
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -16,8 +11,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private EVENT lastEvent;
     private STATE currentState;
     private AutomaState[] states;
-    private List<EntryExit> entryExitList = new ArrayList<EntryExit>();
     private Object payload;
+    private StateActionMap<STATE> entryActions;
+    private StateActionMap<STATE> exitActions;
 
     /**
      * Automa constructor
@@ -32,6 +28,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         for (int i = 0; i < numOfStates; i++) {
             states[i] = new AutomaState(enumStates[i]);
         }
+        entryActions = new StateActionMap();
+        exitActions = new StateActionMap();
     }
 
     /**
@@ -80,26 +78,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         action.run();
         currentState = endState;
         if (endState != startState) {
-            executeInOrOutAction(currentState, Type.enter);
-            executeInOrOutAction(startState, Type.exit);
-        }
-    }
-
-    /**
-     * Executes the entry action if present
-     */
-    private void executeInOrOutAction(STATE state, Type type) {
-        Runnable action;
-        for (EntryExit entryExit : entryExitList) {
-            boolean sameState = state.ordinal() == entryExit.getState().ordinal();
-            boolean enterType = entryExit.getType() == type;
-
-            if (sameState && enterType) {
-                action = entryExit.getAction();
-                if (action != null) {
-                    action.run();
-                }
-            }
+            exitActions.runAction(startState);
+            entryActions.runAction(endState);
         }
     }
 
@@ -126,22 +106,23 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         return payload;
     }
 
-
     /**
-     * Entry action method
+     * Set the action to be executed when entering a state.
      *
-     * @param state The state
-     * @return
+     * @param state  The state.
+     * @param action The action to be executed.
      */
-    public EntryExit<STATE> onceIn(STATE state) {
-        EntryExit entryExit = new EntryExit(state, Type.enter);
-        entryExitList.add(entryExit);
-        return entryExit;
+    public void onEntering(STATE state, Runnable action) {
+        entryActions.put(state, action);
     }
 
-    public EntryExit<STATE> onceOut(STATE state) {
-        EntryExit entryExit = new EntryExit(state, Type.exit);
-        entryExitList.add(entryExit);
-        return entryExit;
+    /**
+     * Set the action to be executed when leaving from a state.
+     *
+     * @param state  The state.
+     * @param action The action to be executed.
+     */
+    public void onLeaving(STATE state, Runnable action) {
+        exitActions.put(state, action);
     }
 }

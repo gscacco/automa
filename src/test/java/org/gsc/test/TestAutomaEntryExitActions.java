@@ -35,7 +35,7 @@ public class TestAutomaEntryExitActions {
     public void shouldHandleEntryAction() {
         // setup
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
-        automa.onceIn(States.RUNNING).executeAction(action);
+        automa.onEntering(States.RUNNING, action);
         // exercise
         automa.signalEvent(Events.EVENT_ONE);
         // verify
@@ -46,7 +46,7 @@ public class TestAutomaEntryExitActions {
     public void shouldIgnoreEntryActionWhenStay() {
         // setup
         automa.from(States.IDLE).stay().when(Events.EVENT_ONE).andDoNothing();
-        automa.onceIn(States.IDLE).executeAction(action);
+        automa.onEntering(States.IDLE, action);
         // exercise
         automa.signalEvent(Events.EVENT_ONE);
         // verify
@@ -57,7 +57,7 @@ public class TestAutomaEntryExitActions {
     public void shouldHandleExitAction() {
         // setup
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
-        automa.onceOut(States.IDLE).executeAction(action);
+        automa.onLeaving(States.IDLE, action);
         // exercise
         automa.signalEvent(Events.EVENT_ONE);
         // verify
@@ -68,7 +68,7 @@ public class TestAutomaEntryExitActions {
     public void shouldIgnoreExitActionWhenStay() {
         // setup
         automa.from(States.IDLE).stay().when(Events.EVENT_ONE).andDoNothing();
-        automa.onceOut(States.IDLE).executeAction(action);
+        automa.onLeaving(States.IDLE, action);
         // exercise
         automa.signalEvent(Events.EVENT_ONE);
         // verify
