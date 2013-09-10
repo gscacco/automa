@@ -1,5 +1,8 @@
 package org.gsc.automa;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -11,6 +14,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private EVENT lastEvent;
     private STATE currentState;
     private AutomaState[] states;
+    private List<EntryExit> entryExitList = new ArrayList<EntryExit>();
     private Object payload;
 
     /**
@@ -37,8 +41,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         return lastEvent;
     }
 
-    public StateConnector<STATE, EVENT> from(STATE startState) {
-        return new StateConnector<STATE, EVENT>(states[startState.ordinal()]);
+    public StateConnector<STATE, EVENT> from(STATE state) {
+        return new StateConnector<STATE, EVENT>(states[state.ordinal()]);
     }
 
     /**
@@ -51,7 +55,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param payload An optional payload associated with the signal.
      */
     protected void handleEvent(EVENT event, Object payload) {
-        this.payload=payload;
+        this.payload = payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
@@ -73,6 +77,24 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         lastEvent = event;
         action.run();
         currentState = endState;
+        if (endState != startState) {
+            executeEntryAction();
+        }
+    }
+
+    /**
+     * Executes the entry action if present
+     */
+    private void executeEntryAction() {
+        Runnable action;
+        for (EntryExit entryExit : entryExitList) {
+            if (currentState.ordinal() == entryExit.getState().ordinal()) {
+                action = entryExit.getAction();
+                if (action != null) {
+                    action.run();
+                }
+            }
+        }
     }
 
     /**
@@ -99,4 +121,15 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
 
+    /**
+     * Entry action method
+     *
+     * @param state The state
+     * @return
+     */
+    public EntryExit<STATE> onceEntered(STATE state) {
+        EntryExit entryExit = new EntryExit(state);
+        entryExitList.add(entryExit);
+        return entryExit;
+    }
 }
