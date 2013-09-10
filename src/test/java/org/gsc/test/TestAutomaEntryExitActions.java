@@ -23,46 +23,56 @@ public class TestAutomaEntryExitActions {
     }
 
     private Automa<States, Events> automa;
+    private SpyAction action;
 
     @Before
     public void before() {
         automa = new Automa<States, Events>(States.IDLE);
+        action = new SpyAction();
     }
 
     @Test
     public void shouldHandleEntryAction() {
-        SpyAction action = new SpyAction();
+        // setup
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
         automa.onceIn(States.RUNNING).executeAction(action);
-
+        // exercise
         automa.signalEvent(Events.EVENT_ONE);
-
-        action.assertExecuted(1);
+        // verify
+        action.assertExecuted();
     }
 
     @Test
-    public void shouldHandleEntryActionWhenStay() {
-        SpyAction action = new SpyAction();
-        automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
-        automa.from(States.RUNNING).stay().when(Events.EVENT_TWO).andDoNothing();
-        automa.onceIn(States.RUNNING).executeAction(action);
-
+    public void shouldIgnoreEntryActionWhenStay() {
+        // setup
+        automa.from(States.IDLE).stay().when(Events.EVENT_ONE).andDoNothing();
+        automa.onceIn(States.IDLE).executeAction(action);
+        // exercise
         automa.signalEvent(Events.EVENT_ONE);
-        automa.signalEvent(Events.EVENT_TWO);
-        action.assertExecuted(1);
+        // verify
+        action.assertNotExecuted();
     }
 
     @Test
     public void shouldHandleExitAction() {
-        SpyAction action = new SpyAction();
+        // setup
         automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
-        automa.from(States.RUNNING).goTo(States.IDLE).when(Events.EVENT_TWO).andDoNothing();
-        automa.onceOut(States.RUNNING).executeAction(action);
-
+        automa.onceOut(States.IDLE).executeAction(action);
+        // exercise
         automa.signalEvent(Events.EVENT_ONE);
-        automa.signalEvent(Events.EVENT_TWO);
+        // verify
+        action.assertExecuted();
+    }
 
-        action.assertExecuted(1);
+    @Test
+    public void shouldIgnoreExitActionWhenStay() {
+        // setup
+        automa.from(States.IDLE).stay().when(Events.EVENT_ONE).andDoNothing();
+        automa.onceOut(States.IDLE).executeAction(action);
+        // exercise
+        automa.signalEvent(Events.EVENT_ONE);
+        // verify
+        action.assertNotExecuted();
     }
 
 }
