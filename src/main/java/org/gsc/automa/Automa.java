@@ -1,5 +1,10 @@
 package org.gsc.automa;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.gsc.automa.EntryExit.Type;
+
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -11,6 +16,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private EVENT lastEvent;
     private STATE currentState;
     private AutomaState[] states;
+    private List<EntryExit> entryExitList = new ArrayList<EntryExit>();
     private Object payload;
 
     /**
@@ -37,8 +43,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         return lastEvent;
     }
 
-    public StateConnector<STATE, EVENT> from(STATE startState) {
-        return new StateConnector<STATE, EVENT>(states[startState.ordinal()]);
+    public StateConnector<STATE, EVENT> from(STATE state) {
+        return new StateConnector<STATE, EVENT>(states[state.ordinal()]);
     }
 
     /**
@@ -51,7 +57,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param payload An optional payload associated with the signal.
      */
     protected void handleEvent(EVENT event, Object payload) {
-        this.payload=payload;
+        this.payload = payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
@@ -66,13 +72,35 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param startState The state the transition starts from.
      * @param endState   The state the transition ends to.
      * @param action     The action to be executed along this transition.
-     * @param event      The event which has triggered the transisition.
+     * @param event      The event which has triggered the transition.
      */
     protected void transit(STATE startState, STATE endState,
                            Runnable action, EVENT event) {
         lastEvent = event;
         action.run();
         currentState = endState;
+        if (endState != startState) {
+            executeInOrOutAction(currentState, Type.enter);
+            executeInOrOutAction(startState, Type.exit);
+        }
+    }
+
+    /**
+     * Executes the entry action if present
+     */
+    private void executeInOrOutAction(STATE state, Type type) {
+        Runnable action;
+        for (EntryExit entryExit : entryExitList) {
+            boolean sameState = state.ordinal() == entryExit.getState().ordinal();
+            boolean enterType = entryExit.getType() == type;
+
+            if (sameState && enterType) {
+                action = entryExit.getAction();
+                if (action != null) {
+                    action.run();
+                }
+            }
+        }
     }
 
     /**
@@ -99,4 +127,21 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
 
+    /**
+     * Entry action method
+     *
+     * @param state The state
+     * @return
+     */
+    public EntryExit<STATE> onceIn(STATE state) {
+        EntryExit entryExit = new EntryExit(state, Type.enter);
+        entryExitList.add(entryExit);
+        return entryExit;
+    }
+
+    public EntryExit<STATE> onceOut(STATE state) {
+        EntryExit entryExit = new EntryExit(state, Type.exit);
+        entryExitList.add(entryExit);
+        return entryExit;
+    }
 }
