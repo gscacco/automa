@@ -1,10 +1,7 @@
 package org.gsc.automa;
 
-import org.gsc.automa.config.*;
-
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -13,27 +10,31 @@ import java.util.logging.Logger;
  * Time: 16.43
  * To change this template use File | Settings | File Templates.
  */
-public class Automa {
-    private AutomaEvent lastEvent;
-    private AutomaState currentState;
-    private IOutputStreamService sequenceStream;
-    private Logger log = Logger.getLogger(getClass().getSimpleName());
-    private boolean firstSignal = true;
+public class Automa<STATE extends Enum, EVENT extends Enum> {
+    private EVENT lastEvent;
+    private STATE currentState;
+    private AutomaState[] states;
+    private Object payload;
+    private StateActionMap<STATE> entryActions;
+    private StateActionMap<STATE> exitActions;
+    private boolean alreadyRunning = false;
+    private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
 
     /**
      * Automa constructor
      *
      * @param startState The start state of the automa
      */
-    public Automa(AutomaState startState) {
+    public Automa(STATE startState) {
         this.currentState = startState;
-        sequenceStream = AutomaServiceDiscovery.getOutputStreamService();
-
-        if (AutomaConfiguration.isThreading()) {
-            Logger.getAnonymousLogger().info("Automa started in asynchronous mode");
-        } else {
-            Logger.getAnonymousLogger().info("Automa started in synchronous mode");
+        STATE[] enumStates = (STATE[]) startState.getClass().getEnumConstants();
+        int numOfStates = enumStates.length;
+        states = new AutomaState[numOfStates];
+        for (int i = 0; i < numOfStates; i++) {
+            states[i] = new AutomaState(enumStates[i]);
         }
+        entryActions = new StateActionMap();
+        exitActions = new StateActionMap();
     }
 
     /**
@@ -41,41 +42,49 @@ public class Automa {
      *
      * @return The last event
      */
-    public AutomaEvent getLastEvent() {
+    public EVENT getLastEvent() {
         return lastEvent;
     }
 
-    private void handleEvent(AutomaEvent event) {
-        Comparable<AutomaEvent> comparable;
-        StateAction stateAction = currentState.getStateAction(event);
+    public StateConnector<STATE, EVENT> from(STATE state) {
+        return new StateConnector<STATE, EVENT>(states[state.ordinal()]);
+    }
 
-        if (stateAction != null) {
-            comparable = stateAction.getComparable();
-            if (comparable != null) {
-                if (comparable.compareTo(event) != 0) {
-                    return;
-                }
-            }
-        } else {
-            log.warning("Discard event " + event.toString() + " from state " + currentState.toString());
+    /**
+     * Handle an automa event by executing the action associated
+     * with the state transition and then transit the automa to the
+     * related new state. However if the validation of the event
+     * object fails, the transition won't take place.
+     *
+     * @param event   The event to handle.
+     * @param payload An optional payload associated with the signal.
+     */
+    protected void handleEvent(EVENT event, Object payload) {
+        this.payload = payload;
+        Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
+        if (transition != null && transition.getValidator().validate(payload)) {
+            Runnable action = transition.getAction();
+            transit(currentState, transition.getEndState(), action, event);
         }
+    }
 
+    /**
+     * Transit from a state to its following one and execute the
+     * action associated with the transition.
+     *
+     * @param startState The state the transition starts from.
+     * @param endState   The state the transition ends to.
+     * @param action     The action to be executed along this transition.
+     * @param event      The event which has triggered the transition.
+     */
+    protected void transit(STATE startState, STATE endState,
+                           Runnable action, EVENT event) {
         lastEvent = event;
-        if (stateAction != null) {
-            Runnable action = stateAction.getAction();
-            AutomaState nextState = stateAction.getStatus();
-            if (sequenceStream != null) {
-                String str = currentState.toString() + " -> " + nextState.toString() + ": " + event.toString() + "\n";
-                try {
-                    sequenceStream.write(str);
-                } catch (IOException e) {
-                }
-            }
-
-            if (action != null) {
-                action.run();
-            }
-            currentState = stateAction.getStatus();
+        action.run();
+        currentState = endState;
+        if (endState != startState) {
+            exitActions.runAction(startState);
+            entryActions.runAction(endState);
         }
     }
 
@@ -84,59 +93,62 @@ public class Automa {
      *
      * @param event The event
      */
-    public void signalEvent(final AutomaEvent event) {
-        if (this.firstSignal) {
-            setupAutomaConfig();
-            this.firstSignal = false;
-        }
-        if (AutomaConfiguration.isThreading()) {
-            IAutomaExecutorService executorService = AutomaServiceDiscovery.getExecutorService();
-            Runnable job = new Runnable() {
-                @Override
-                public void run() {
-                    handleEvent(event);
-                }
-            };
-            if (executorService != null) {
-                executorService.submitJob(job);
-            } else {
-                Logger.getAnonymousLogger().log(Level.SEVERE, "The automa is multithread but no executor service available");
-            }
-
-        } else {
-            handleEvent(event);
-        }
-    }
-
-    private void setupAutomaConfig() {
-        if (AutomaServiceDiscovery.getExecutorService() == null) {
-            AutomaExecutorService executorService = new AutomaExecutorService();
-            AutomaServiceDiscovery.setExecutorService(executorService);
-        }
-        if (AutomaServiceDiscovery.getOutputStreamService() == null) {
-            AutomaServiceDiscovery.setOutputStreamService(new FileOutputStreamService());
-            try {
-                AutomaServiceDiscovery.getOutputStreamService().write("@startuml\n");
-            } catch (IOException e) {
-                Logger.getAnonymousLogger().log(Level.SEVERE, "File not available");
-            }
-        }
+    public synchronized void signalEvent(EVENT event) {
+        signalEvent(event, new Object());
     }
 
     /**
-     * This method should be called at the end of the execution of the automa.
-     * It also writes @enduml at the end of the temporary file containing the sequence diagram.
+     * Signal an event to the automa.
+     *
+     * @param event   The event to signal.
+     * @param payload A payload to associate with the event.
      */
-    public void closeAutoma() {
-        Logger.getAnonymousLogger().info("Closing automa on state " + currentState);
-        if (sequenceStream != null) {
-            try {
-                sequenceStream.write("@enduml");
-            } catch (IOException e) {
+    public synchronized void signalEvent(EVENT event, Object payload) {
+        if (alreadyRunning) {
+            jobs.add(new EventPayload(event, payload));
+        } else {
+            alreadyRunning = true;
+            handleEvent(event, payload);
+            while (!jobs.isEmpty()) {
+                EventPayload job = jobs.poll();
+                handleEvent(job.event, job.payload);
             }
+            alreadyRunning = false;
         }
-        if (AutomaServiceDiscovery.getExecutorService() != null) {
-            AutomaServiceDiscovery.getExecutorService().stopService();
+
+    }
+
+    public Object getPayload() {
+        return payload;
+    }
+
+    /**
+     * Set the action to be executed when entering a state.
+     *
+     * @param state  The state.
+     * @param action The action to be executed.
+     */
+    public void onceIn(STATE state, Runnable action) {
+        entryActions.put(state, action);
+    }
+
+    /**
+     * Set the action to be executed when leaving from a state.
+     *
+     * @param state  The state.
+     * @param action The action to be executed.
+     */
+    public void onceOut(STATE state, Runnable action) {
+        exitActions.put(state, action);
+    }
+
+    private class EventPayload {
+        EVENT event;
+        Object payload;
+
+        public EventPayload(EVENT event, Object payload) {
+            this.event = event;
+            this.payload = payload;
         }
     }
 }

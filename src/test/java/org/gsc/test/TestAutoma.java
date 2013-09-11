@@ -1,20 +1,11 @@
 package org.gsc.test;
 
 import org.gsc.automa.Automa;
-import org.gsc.automa.AutomaEvent;
-import org.gsc.automa.AutomaFactory;
-import org.gsc.automa.AutomaState;
-import org.gsc.automa.config.AutomaConfiguration;
-import org.gsc.automa.config.AutomaServiceDiscovery;
-import org.gsc.test.utils.FakeFileService;
+import org.gsc.automa.EventValidator;
+import org.gsc.test.utils.AutomaTestCase;
+import org.gsc.test.utils.SpyAction;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.logging.Logger;
-
-import static org.gsc.automa.StateConnector.from;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created with IntelliJ IDEA.
@@ -23,73 +14,148 @@ import static org.junit.Assert.assertTrue;
  * Time: 16.11
  * To change this template use File | Settings | File Templates.
  */
-public class TestAutoma {
-    private AutomaEvent evtOne = new AutomaEvent("evtOne");
-    private AutomaEvent evtTwo = new AutomaEvent("evtTwo");
-    private boolean runCheck = false;
-    private Boolean syncVar = false;
+public class TestAutoma extends AutomaTestCase {
+
+    private Automa automa;
+    private SpyAction action;
 
     @Before
     public void before() {
-        AutomaConfiguration.setThreading(true);
+        action = new SpyAction();
+        automa = new Automa(FakeState.STATE_1);
     }
 
     @Test
-    public void shouldCreateAutoma() throws Exception {
-        Logger.getAnonymousLogger().info("");
-        AutomaFactory af = new AutomaFactory();
-        AutomaState start = af.createState("start");
-        AutomaState endState = af.createState("endState");
+    public void shouldExecuteAction() throws Exception {
+        // setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        action.assertExecuted();
+    }
+
+    @Test
+    public void shouldChangeState() throws Exception {
+        // setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        automa.from(FakeState.STATE_2).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        action.assertExecuted();
+    }
+
+    @Test
+    public void shouldStayOnSameState() {
+        // setup
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        action.assertExecuted(2);
+    }
+
+    @Test
+    public void shouldDoTheSameActionForMultipleEvents() {
+        // setup
+        automa.from(FakeState.STATE_1).stay().forEach(FakeEvent.EVENT_1, FakeEvent.EVENT_2).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_2);
+        // verify
+        action.assertExecuted(2);
+    }
+
+    @Test
+    public void shouldTransitIfEventObjectIsValid() {
+        // setup
+        EventValidator validator = new EventValidator() {
+            @Override
+            public boolean validate(Object object) {
+                return true;
+            }
+        };
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        action.assertExecuted();
+    }
+
+    @Test
+    public void shouldNotTransitIfEventObjectIsNotValid() {
+        // setup
+        EventValidator validator = new EventValidator() {
+            @Override
+            public boolean validate(Object object) {
+                return false;
+            }
+        };
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).onlyIf(validator).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        action.assertExecuted(0);
+    }
+
+    @Test
+    public void shouldProvideTheLastEventSignalled() {
+        // setup
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
+    }
+
+    @Test
+    public void shouldIgnoreUnmappedEvent() {
+        automa.signalEvent(FakeEvent.EVENT_1);
+    }
 
 
-        from(start).stay().when(evtOne).andDoNothing();
+    @Test
+    public void shouldRetrievePayload() {
+        final Object payload = new Object();
 
+        class MyAction implements Runnable {
+            public boolean executed = false;
+
+            @Override
+            public void run() {
+                executed = true;
+                assertEquals(payload, automa.getPayload());
+            }
+        }
+        MyAction testAction = new MyAction();
+
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(testAction);
+        automa.signalEvent(FakeEvent.EVENT_1, payload);
+
+        assertTrue(testAction.executed);
+    }
+
+    @Test
+    public void shouldHandleNestedSignal() {
+        SpyAction spyAction = new SpyAction();
 
         Runnable action = new Runnable() {
             @Override
             public void run() {
-                synchronized (syncVar) {
-                    runCheck = true;
-                    syncVar.notify();
-                }
+                automa.signalEvent(FakeEvent.EVENT_2);
             }
         };
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
 
-        from(start).goTo(endState).when(evtTwo).andDo(action);
+        automa.from(FakeState.STATE_2).goTo(FakeState.STATE_1).when(FakeEvent.EVENT_2).andDo(spyAction);
 
-        Automa automa = new Automa(start);
-
-        automa.signalEvent(evtOne);
-        assertFalse(runCheck);
-
-        automa.signalEvent(evtTwo);
-        synchronized (syncVar) {
-            try {
-                syncVar.wait();
-            } catch (InterruptedException e) {
-            }
-        }
-        assertTrue(runCheck);
-        automa.closeAutoma();
-    }
-
-    @Test
-    public void shouldVerifyErrorOnSequenceDiagram() throws Exception {
-        Logger.getAnonymousLogger().info("");
-        FakeFileService service = new FakeFileService();
-        service.setThrowExceptionOnWrite();
-        AutomaConfiguration.setThreading(false);
-        AutomaServiceDiscovery.setOutputStreamService(service);
-
-        AutomaFactory af = new AutomaFactory();
-        AutomaState start = af.createState("start");
-
-        from(start).stay().when(evtOne).andDoNothing();
-
-        Automa automa = new Automa(start);
-
-
-        automa.signalEvent(evtOne);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        spyAction.assertExecuted();
     }
 
 }
+
+

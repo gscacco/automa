@@ -9,44 +9,25 @@ import java.util.HashMap;
  * Time: 16.44
  * To change this template use File | Settings | File Templates.
  */
-public class AutomaState {
-    private String name;
-    private HashMap<AutomaEvent, StateAction> map = new HashMap<AutomaEvent, StateAction>();
+public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
-    public AutomaState(String name) {
-        this.name = name;
+    private STATE state;
+    private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
+
+    public AutomaState(STATE state) {
+        this.state = state;
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent event, Runnable action) {
-        map.put(event, new StateAction(state, action));
+    public STATE getState() {
+        return state;
     }
 
-    public void transitionTo(AutomaState state, AutomaEvent events[], Runnable action) {
-        for (AutomaEvent event : events) {
-            transitionTo(state, event, action);
-        }
+    public Transition getTransition(EVENT event) {
+        return transitions.get(event.ordinal());
     }
 
-    public void stay(AutomaEvent event, Runnable action) {
-        map.put(event, new StateAction(this, action));
+    public void transitTo(STATE endState, EVENT event, EventValidator validator, Runnable action) {
+        transitions.put(event.ordinal(), new Transition(endState, action, validator));
     }
 
-    @Override
-    public String toString() {
-        return name;
-    }
-
-    public StateAction getStateAction(AutomaEvent event) {
-        return map.get(event);
-    }
-
-    public void stay(AutomaEvent[] events, Runnable action) {
-        for (AutomaEvent event : events) {
-            stay(event, action);
-        }
-    }
-
-    public void transitionTo(AutomaState state, AutomaEvent event, Comparable<AutomaEvent> comparable, Runnable action) {
-        map.put(event, new StateAction(state, action, comparable));
-    }
 }
