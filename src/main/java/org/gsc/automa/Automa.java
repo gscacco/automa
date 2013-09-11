@@ -1,5 +1,8 @@
 package org.gsc.automa;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**
  * Created with IntelliJ IDEA.
  * User: gianluca
@@ -14,6 +17,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private Object payload;
     private StateActionMap<STATE> entryActions;
     private StateActionMap<STATE> exitActions;
+    private boolean alreadyRunning = false;
+    private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
 
     /**
      * Automa constructor
@@ -99,7 +104,18 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param payload A payload to associate with the event.
      */
     public synchronized void signalEvent(EVENT event, Object payload) {
-        handleEvent(event, payload);
+        if (alreadyRunning) {
+            jobs.add(new EventPayload(event, payload));
+        } else {
+            alreadyRunning = true;
+            handleEvent(event, payload);
+            while (!jobs.isEmpty()) {
+                EventPayload job = jobs.poll();
+                handleEvent(job.event, job.payload);
+            }
+            alreadyRunning = false;
+        }
+
     }
 
     public Object getPayload() {
@@ -124,5 +140,15 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     public void onceOut(STATE state, Runnable action) {
         exitActions.put(state, action);
+    }
+
+    private class EventPayload {
+        EVENT event;
+        Object payload;
+
+        public EventPayload(EVENT event, Object payload) {
+            this.event = event;
+            this.payload = payload;
+        }
     }
 }
