@@ -138,6 +138,24 @@ public class TestAutoma extends AutomaTestCase {
         assertTrue(testAction.executed);
     }
 
+    @Test
+    public void shouldHandleNestedSignal() {
+        SpyAction spyAction = new SpyAction();
+
+        Runnable action = new Runnable() {
+            @Override
+            public void run() {
+                automa.signalEvent(FakeEvent.EVENT_2);
+            }
+        };
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
+
+        automa.from(FakeState.STATE_2).goTo(FakeState.STATE_1).when(FakeEvent.EVENT_2).andDo(spyAction);
+
+        automa.signalEvent(FakeEvent.EVENT_1);
+        spyAction.assertExecuted();
+    }
+
 }
 
 
