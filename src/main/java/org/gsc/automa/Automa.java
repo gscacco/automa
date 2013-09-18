@@ -2,6 +2,7 @@ package org.gsc.automa;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -19,6 +20,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private StateActionMap<STATE> exitActions;
     private boolean alreadyRunning = false;
     private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
+
+    protected Logger log = Logger.getLogger(getClass().getName());
 
     /**
      * Automa constructor
@@ -66,6 +69,11 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
             Runnable action = transition.getAction();
             transit(currentState, transition.getEndState(), action, event);
         }
+        else
+        {
+            log.warning("Discard event " + event.toString() + " from state " + currentState.toString());
+        }
+
     }
 
     /**
@@ -82,6 +90,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         lastEvent = event;
         action.run();
         currentState = endState;
+        log.info("State transition from  "+currentState + " to "+ endState+" on event "+event);
         if (endState != startState) {
             exitActions.runAction(startState);
             entryActions.runAction(endState);
