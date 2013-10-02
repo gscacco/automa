@@ -22,17 +22,16 @@ public class UmlWriterAutoma<STATE extends Enum, EVENT extends Enum> extends Aut
      * to the underlying writer.
      */
     @Override
-    protected void transit(STATE startState, STATE endState,
-                           Runnable action, EVENT event) {
+    protected void transit(Transition<STATE> transition, EVENT event) {
         try {
             _writer.write(String.format("%s -> %s : %s\n",
-                    startState,
-                    endState,
+                    currentState,
+                    transition.getEndState(),
                     event));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        super.transit(startState, endState, action, event);
+        super.transit(transition, event);
     }
 
     /**
