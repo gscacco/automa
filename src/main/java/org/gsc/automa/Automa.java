@@ -1,6 +1,8 @@
 package org.gsc.automa;
 
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 
 /**
@@ -19,6 +21,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private StateActionMap<STATE> exitActions;
     private boolean alreadyRunning = false;
     private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
+    private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
 
     /**
      * Automa constructor
@@ -65,6 +68,20 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
             transit(currentState, transition.getEndState(), action, event);
+        }
+        signalChildAutoma(event, payload);
+    }
+    
+    /**
+     * Signal an event to the child automa.
+     * 
+     * @param event   The event to signal to the child automa.
+     * @param payload An optional payload associated with the signal.
+     */
+    private void signalChildAutoma(EVENT event, Object payload) {
+        Automa childAutoma = childrenAutoma.get(currentState);
+        if (childAutoma != null) {
+            childAutoma.signalEvent(event, payload);
         }
     }
 
@@ -159,6 +176,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param childAutoma The child automa.
      */    
     public void addChildAutoma(STATE state, Automa childAutoma) {
-
+        childrenAutoma.put(state, childAutoma);
     }
 }
