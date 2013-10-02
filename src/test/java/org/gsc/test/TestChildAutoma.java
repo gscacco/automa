@@ -45,7 +45,7 @@ public class TestChildAutoma extends AutomaTestCase {
     }
 
     @Test
-    public void shouldGivePriorityToParent() {
+    public void shouldTransitJustTheParent() {
         // setup
         automa.from(State.START).goTo(State.END).when(FakeEvent.EVENT_1).andDo(parentAction);
         // exercise
@@ -56,7 +56,7 @@ public class TestChildAutoma extends AutomaTestCase {
     }
 
     @Test
-    public void shouldGivePriorityToParentOnStay() {
+    public void shouldGivePriorityToParent() {
         // setup
         automa.from(State.START).stay().when(FakeEvent.EVENT_1).andDo(parentAction);
         // exercise
