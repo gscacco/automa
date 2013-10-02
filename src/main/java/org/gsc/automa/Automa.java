@@ -15,11 +15,11 @@ import java.util.Queue;
 public class Automa<STATE extends Enum, EVENT extends Enum> {
     private STATE initialState;
     private EVENT lastEvent;
-    private STATE currentState;
+    protected STATE currentState;
     private AutomaState[] states;
     private Object payload;
-    private StateActionMap<STATE> entryActions;
-    private StateActionMap<STATE> exitActions;
+    private StateActionMap<STATE> entryActions = new StateActionMap();
+    private StateActionMap<STATE> exitActions = new StateActionMap(); 
     private boolean alreadyRunning = false;
     private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
     private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
@@ -39,8 +39,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         for (int i = 0; i < numOfStates; i++) {
             states[i] = new AutomaState(enumStates[i]);
         }
-        entryActions = new StateActionMap();
-        exitActions = new StateActionMap();
     }
 
     /**
@@ -65,29 +63,34 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event   The event to handle.
      * @param payload An optional payload associated with the signal.
      */
-    protected void handleEvent(EVENT event, Object payload) {
+    private void handleEvent(EVENT event, Object payload) {
         this.payload = payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
-            Runnable action = transition.getAction();
-            STATE localState = currentState;
-            transit(currentState, transition.getEndState(), action, event);
-            //Check the holding strategy
-            if (localState != transition.getEndState()) {
-                applyHoldingStrategy();
-            }
+            transit(transition, event);
+            applyHoldingStrategy(transition);
         } else {
             signalChildAutoma(event, payload);
         }
     }
 
-    private void applyHoldingStrategy() {
+    /**
+     * Check whether the given transition requires the child automa 
+     * to be reset, according to the holding strategy.
+     * 
+     * @param transition The transition to apply the holding 
+     *                   strategy to.
+     */
+    private void applyHoldingStrategy(Transition transition) {
         Automa childAutoma = childrenAutoma.get(currentState);
-        if (childAutoma != null && strategy == HoldingStrategy.RESET) {
+        if (childAutoma != null && strategy == HoldingStrategy.RESET && ! transition.isLace()) {
             childAutoma.reset();
         }
     }
 
+    /**
+     * Reset the automa to its initial start state.
+     */
     private void reset() {
         this.currentState = initialState;
     }
@@ -106,18 +109,17 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     /**
-     * Transit from a state to its following one and execute the
-     * action associated with the transition.
+     * Transit from the current state along the given transition and
+     * execute the action associated with it. 
      *
-     * @param startState The state the transition starts from.
-     * @param endState   The state the transition ends to.
-     * @param action     The action to be executed along this transition.
+     * @param transition The transition to transit through.
      * @param event      The event which has triggered the transition.
      */
-    protected void transit(STATE startState, STATE endState,
-                           Runnable action, EVENT event) {
+    protected void transit(Transition<STATE> transition, EVENT event) {
+        STATE startState = currentState;
+        STATE endState = transition.getEndState();
         lastEvent = event;
-        action.run();
+        transition.getAction().run();
         currentState = endState;
         if (endState != startState) {
             exitActions.runAction(startState);
