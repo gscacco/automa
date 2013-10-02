@@ -151,4 +151,14 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
             this.payload = payload;
         }
     }
+
+    /**
+     * Add a child automa which operates when this automa is in a given state.
+     * 
+     * @param state       The state under which the child automa will operate.
+     * @param childAutoma The child automa.
+     */    
+    public void addChildAutoma(STATE state, Automa childAutoma) {
+
+    }
 }
