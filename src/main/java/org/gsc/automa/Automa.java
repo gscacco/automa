@@ -13,6 +13,7 @@ import java.util.Queue;
  * To change this template use File | Settings | File Templates.
  */
 public class Automa<STATE extends Enum, EVENT extends Enum> {
+    private STATE initialState;
     private EVENT lastEvent;
     private STATE currentState;
     private AutomaState[] states;
@@ -22,6 +23,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private boolean alreadyRunning = false;
     private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
     private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
+    private HoldingStrategy strategy = HoldingStrategy.HOLD;
 
     /**
      * Automa constructor
@@ -29,6 +31,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param startState The start state of the automa
      */
     public Automa(STATE startState) {
+        this.initialState = startState;
         this.currentState = startState;
         STATE[] enumStates = (STATE[]) startState.getClass().getEnumConstants();
         int numOfStates = enumStates.length;
@@ -67,14 +70,31 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
+            STATE localState = currentState;
             transit(currentState, transition.getEndState(), action, event);
+            //Check the holding strategy
+            if (localState != transition.getEndState()) {
+                applyHoldingStrategy();
+            }
+        } else {
+            signalChildAutoma(event, payload);
         }
-        signalChildAutoma(event, payload);
     }
-    
+
+    private void applyHoldingStrategy() {
+        Automa childAutoma = childrenAutoma.get(currentState);
+        if (childAutoma != null && strategy == HoldingStrategy.RESET) {
+            childAutoma.reset();
+        }
+    }
+
+    private void reset() {
+        this.currentState = initialState;
+    }
+
     /**
      * Signal an event to the child automa.
-     * 
+     *
      * @param event   The event to signal to the child automa.
      * @param payload An optional payload associated with the signal.
      */
@@ -159,6 +179,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         exitActions.put(state, action);
     }
 
+
     private class EventPayload {
         EVENT event;
         Object payload;
@@ -171,11 +192,23 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     /**
      * Add a child automa which operates when this automa is in a given state.
-     * 
+     *
+     * @param state       The state under which the child automa will operate.
+     * @param strategy
+     * @param childAutoma The child automa.
+     */
+    public void addChildAutoma(STATE state, HoldingStrategy strategy, Automa childAutoma) {
+        this.strategy = strategy;
+        childrenAutoma.put(state, childAutoma);
+    }
+
+    /**
+     * Add a child automa which operates when this automa is in a given state.
+     *
      * @param state       The state under which the child automa will operate.
      * @param childAutoma The child automa.
-     */    
+     */
     public void addChildAutoma(STATE state, Automa childAutoma) {
-        childrenAutoma.put(state, childAutoma);
+        addChildAutoma(state, HoldingStrategy.HOLD, childAutoma);
     }
 }
