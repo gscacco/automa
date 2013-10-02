@@ -1,6 +1,7 @@
 package org.gsc.test;
 
 import org.gsc.automa.Automa;
+import org.gsc.automa.HoldingStrategy;
 import org.gsc.test.utils.AutomaTestCase;
 import org.gsc.test.utils.SpyAction;
 import org.junit.Before;
@@ -64,5 +65,49 @@ public class TestChildAutoma extends AutomaTestCase {
         // verify
         childAction.assertNotExecuted();
         parentAction.assertExecuted();
+    }
+
+    @Test
+    public void shouldResetChildAutoma() {
+        // setup
+        automa.addChildAutoma(
+                State.START,
+                HoldingStrategy.RESET,
+                new Automa(StartSubState.LOADING) {{
+                    from(StartSubState.LOADING).goTo(StartSubState.RUNNING).when(FakeEvent.EVENT_1).andDo(childAction);
+                }});
+        automa.from(State.START).goTo(State.END).when(FakeEvent.EVENT_2).andDoNothing();
+        automa.from(State.END).goTo(State.START).when(FakeEvent.EVENT_2).andDoNothing();
+
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_2);
+        automa.signalEvent(FakeEvent.EVENT_2);
+        //The sub-automa should be on LOADING
+        automa.signalEvent(FakeEvent.EVENT_1);
+
+        //Verify
+        childAction.assertExecuted(2);
+    }
+
+    @Test
+    public void shouldNotResetChildAutomaWhenStay() {
+        // setup
+        automa.addChildAutoma(
+                State.START,
+                HoldingStrategy.RESET,
+                new Automa(StartSubState.LOADING) {{
+                    from(StartSubState.LOADING).goTo(StartSubState.RUNNING).when(FakeEvent.EVENT_1).andDo(childAction);
+                }});
+        automa.from(State.START).stay().when(FakeEvent.EVENT_2).andDoNothing();
+
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_2);
+        //The sub-automa should be on LOADING
+        automa.signalEvent(FakeEvent.EVENT_1);
+
+        //Verify
+        childAction.assertExecuted(1);
     }
 }
