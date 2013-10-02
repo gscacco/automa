@@ -68,13 +68,14 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         if (transition != null && transition.getValidator().validate(payload)) {
             Runnable action = transition.getAction();
             transit(currentState, transition.getEndState(), action, event);
+        } else {
+            signalChildAutoma(event, payload);
         }
-        signalChildAutoma(event, payload);
     }
-    
+
     /**
      * Signal an event to the child automa.
-     * 
+     *
      * @param event   The event to signal to the child automa.
      * @param payload An optional payload associated with the signal.
      */
@@ -171,10 +172,10 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     /**
      * Add a child automa which operates when this automa is in a given state.
-     * 
+     *
      * @param state       The state under which the child automa will operate.
      * @param childAutoma The child automa.
-     */    
+     */
     public void addChildAutoma(STATE state, Automa childAutoma) {
         childrenAutoma.put(state, childAutoma);
     }
