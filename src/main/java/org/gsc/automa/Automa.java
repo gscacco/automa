@@ -1,3 +1,21 @@
+/*
+ * Copyright 2013 Gianluca Scacco
+ * <p/>
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * <p/>
+ * Gianluca Scacco <gianluca.scacco@gmail.com>
+ */
+
 package org.gsc.automa;
 
 import java.util.HashMap;
@@ -5,13 +23,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-/**
- * Created with IntelliJ IDEA.
- * User: gianluca
- * Date: 04/04/13
- * Time: 16.43
- * To change this template use File | Settings | File Templates.
- */
+
 public class Automa<STATE extends Enum, EVENT extends Enum> {
     private STATE initialState;
     private EVENT lastEvent;
@@ -19,7 +31,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private AutomaState[] states;
     private Object payload;
     private StateActionMap<STATE> entryActions = new StateActionMap();
-    private StateActionMap<STATE> exitActions = new StateActionMap(); 
+    private StateActionMap<STATE> exitActions = new StateActionMap();
     private boolean alreadyRunning = false;
     private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
     private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
@@ -75,15 +87,15 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     /**
-     * Check whether the given transition requires the child automa 
+     * Check whether the given transition requires the child automa
      * to be reset, according to the holding strategy.
-     * 
-     * @param transition The transition to apply the holding 
+     *
+     * @param transition The transition to apply the holding
      *                   strategy to.
      */
     private void applyHoldingStrategy(Transition transition) {
         Automa childAutoma = childrenAutoma.get(currentState);
-        if (childAutoma != null && strategy == HoldingStrategy.RESET && ! transition.isLace()) {
+        if (childAutoma != null && strategy == HoldingStrategy.RESET && !transition.isLace()) {
             childAutoma.reset();
         }
     }
@@ -110,7 +122,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     /**
      * Transit from the current state along the given transition and
-     * execute the action associated with it. 
+     * execute the action associated with it.
      *
      * @param transition The transition to transit through.
      * @param event      The event which has triggered the transition.
