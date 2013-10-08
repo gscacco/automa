@@ -112,16 +112,6 @@ public class TestAutoma extends AutomaTestCase {
     }
 
     @Test
-    public void shouldProvideTheLastEventSignalled() {
-        // setup
-        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(action);
-        // exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        // verify
-        assertEquals("Last event", FakeEvent.EVENT_1, automa.getLastEvent());
-    }
-
-    @Test
     public void shouldIgnoreUnmappedEvent() {
         automa.signalEvent(FakeEvent.EVENT_1);
     }

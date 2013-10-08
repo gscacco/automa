@@ -31,7 +31,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     private STATE initialState;
-    private EVENT lastEvent;
     protected STATE currentState;
     private AutomaState[] states;
     private Object payload;
@@ -56,15 +55,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         for (int i = 0; i < numOfStates; i++) {
             states[i] = new AutomaState(enumStates[i]);
         }
-    }
-
-    /**
-     * This method is normaly used in the action. It returns the last event signaled to the automa
-     *
-     * @return The last event
-     */
-    public EVENT getLastEvent() {
-        return lastEvent;
     }
 
     public StateConnector<STATE, EVENT> from(STATE state) {
@@ -135,7 +125,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
         STATE startState = currentState;
         STATE endState = transition.getEndState();
-        lastEvent = event;
         executeAction(transition, payload);
         currentState = endState;
         if (endState != startState) {
