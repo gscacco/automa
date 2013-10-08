@@ -25,6 +25,11 @@ import java.util.Queue;
 
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
+
+    static public interface Action {
+        public void run(Object payload);
+    }
+
     private STATE initialState;
     private EVENT lastEvent;
     protected STATE currentState;
@@ -79,7 +84,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         this.payload = payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
-            transit(transition, event);
+            transit(transition, event, payload);
             applyHoldingStrategy(transition);
         } else {
             signalChildAutoma(event, payload);
@@ -127,11 +132,11 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param transition The transition to transit through.
      * @param event      The event which has triggered the transition.
      */
-    protected void transit(Transition<STATE> transition, EVENT event) {
+    protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
         STATE startState = currentState;
         STATE endState = transition.getEndState();
         lastEvent = event;
-        executeAction(transition);
+        executeAction(transition, payload);
         currentState = endState;
         if (endState != startState) {
             exitActions.runAction(startState);
@@ -144,8 +149,8 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * 
      * @param transition The transition to execute the related actions.
      */
-    protected void executeAction(Transition transition) {
-      transition.getAction().run();
+    protected void executeAction(Transition transition, Object payload) {
+      transition.getAction().run(payload);
     }
 
     /**
@@ -176,10 +181,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
             alreadyRunning = false;
         }
 
-    }
-
-    public Object getPayload() {
-        return payload;
     }
 
     /**

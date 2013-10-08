@@ -19,16 +19,18 @@ package org.gsc.automa;
 
 import java.util.ArrayList;
 
+import org.gsc.automa.Automa.Action;
+
 public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     private AutomaState<STATE, EVENT> startState;
     private STATE nextState;
     private ArrayList<EVENT> events;
-    private Runnable action = null;
+    private Automa.Action action = null;
     private EventValidator validator;
 
-    static private Runnable nullAction = new Runnable() {
+    static private Automa.Action nullAction = new Automa.Action() {
         @Override
-        public void run() { /* Do nothing */ }
+        public void run(Object obj) { /* Do nothing */ }
     };
 
     static private EventValidator nullValidator = new EventValidator() {
@@ -57,10 +59,25 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     }
 
     public void andDo(Runnable action) {
+        class RunnableActionAdapter implements Automa.Action {
+            private Runnable runnable;
+            RunnableActionAdapter(Runnable runnable) {
+                this.runnable = runnable;
+            }
+            @Override
+            public void run(Object obj) {
+                runnable.run();
+            }
+        }
+        andDo(new RunnableActionAdapter(action));
+    }
+
+    public void andDo(Automa.Action action) {
         this.action = action;
         for (EVENT event : this.events) {
             startState.transitTo(nextState, event, validator, action);
         }
+
     }
 
     public void andDoNothing() {

@@ -31,8 +31,13 @@ extends Automa<STATE, EVENT> {
     }
 
     @Override
-    protected void executeAction(Transition transition) {
-      new Thread(transition.getAction()).start();
+    protected void executeAction(final Transition transition, final Object paylaod) {
+      new Thread(new Runnable() {
+          @Override
+          public void run() {
+            transition.getAction().run(paylaod);
+          }
+        }).start();
     }
 
 }

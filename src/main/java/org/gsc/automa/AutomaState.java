@@ -36,7 +36,10 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
         return transitions.get(event.ordinal());
     }
 
-    public void transitTo(STATE endState, EVENT event, EventValidator validator, Runnable action) {
+    public void transitTo(STATE endState,
+                          EVENT event,
+                          EventValidator validator,
+                          Automa.Action action) {
         transitions.put(event.ordinal(), new Transition(state,
                 endState,
                 action,

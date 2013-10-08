@@ -39,7 +39,7 @@ public class UmlWriterAutoma<STATE extends Enum, EVENT extends Enum> extends Aut
      * to the underlying writer.
      */
     @Override
-    protected void transit(Transition<STATE> transition, EVENT event) {
+    protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
         try {
             _writer.write(String.format("%s -> %s : %s\n",
                     currentState,
@@ -48,7 +48,7 @@ public class UmlWriterAutoma<STATE extends Enum, EVENT extends Enum> extends Aut
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        super.transit(transition, event);
+        super.transit(transition, event, payload);
     }
 
     /**

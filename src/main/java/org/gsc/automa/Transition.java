@@ -20,12 +20,12 @@ package org.gsc.automa;
 public class Transition<STATE extends Enum> {
     private final STATE startState;
     private final STATE endState;
-    private final Runnable action;
+    private final Automa.Action action;
     private EventValidator validator;
 
     public Transition(STATE startState,
                       STATE endState,
-                      Runnable action,
+                      Automa.Action action,
                       EventValidator validator) {
         this.startState = startState;
         this.endState = endState;
@@ -33,7 +33,7 @@ public class Transition<STATE extends Enum> {
         this.validator = validator;
     }
 
-    public Runnable getAction() {
+    public Automa.Action getAction() {
         return action;
     }
 
