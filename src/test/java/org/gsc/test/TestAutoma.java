@@ -24,7 +24,6 @@ import org.gsc.test.utils.SpyAction;
 import org.junit.Before;
 import org.junit.Test;
 
-
 public class TestAutoma extends AutomaTestCase {
 
     private Automa automa;
@@ -127,43 +126,46 @@ public class TestAutoma extends AutomaTestCase {
         automa.signalEvent(FakeEvent.EVENT_1);
     }
 
-
     @Test
-    public void shouldRetrievePayload() {
-        final Object payload = new Object();
-
-        class MyAction implements Runnable {
+    public void shouldPassPayloadToAction() {
+        class MyAction implements Automa.Action {
             public boolean executed = false;
-
+            public Object payload;
             @Override
-            public void run() {
+            public void run(Object o) {
                 executed = true;
-                assertEquals(payload, automa.getPayload());
+                payload = o;
+            }
+            public void assertPayload(Object o) {
+              assertTrue("Action not executed", executed);
+              assertEquals("Payload", o, payload);
             }
         }
-        MyAction testAction = new MyAction();
-
-        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(testAction);
+        // setup
+        Object payload = new Object();
+        MyAction spyAction = new MyAction();
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDo(spyAction);
+        // exercise
         automa.signalEvent(FakeEvent.EVENT_1, payload);
-
-        assertTrue(testAction.executed);
+        // verify
+        spyAction.assertPayload(payload);
     }
 
     @Test
     public void shouldHandleNestedSignal() {
-        SpyAction spyAction = new SpyAction();
-
         Runnable action = new Runnable() {
             @Override
             public void run() {
                 automa.signalEvent(FakeEvent.EVENT_2);
             }
         };
+        // setup
+        SpyAction spyAction = new SpyAction();
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
-
         automa.from(FakeState.STATE_2).goTo(FakeState.STATE_1).when(FakeEvent.EVENT_2).andDo(spyAction);
-
+        // exercise
         automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
         spyAction.assertExecuted();
     }
 
