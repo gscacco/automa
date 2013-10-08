@@ -27,13 +27,9 @@ public class AutomaTestCase extends Assert {
         STATE_3,
     }
 
-    ;
-
     public enum FakeEvent {
         EVENT_1,
         EVENT_2
     }
-
-    ;
 
 }
