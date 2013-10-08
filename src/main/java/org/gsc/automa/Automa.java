@@ -134,7 +134,10 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     /**
      * Execute the action associated with a given transition.
      * 
-     * @param transition The transition to execute the related actions.
+     * @param transition The transition to execute the related actions. 
+     * @param payload    The payload associated with the event that 
+     *                   triggered the transition. This is supposed
+     *                   to be passed to the action.
      */
     protected void executeAction(Transition transition, Object payload) {
       transition.getAction().run(payload);
