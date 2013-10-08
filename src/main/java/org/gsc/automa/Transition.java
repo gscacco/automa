@@ -37,6 +37,10 @@ public class Transition<STATE extends Enum> {
         return action;
     }
 
+    public STATE getStartState() {
+      return startState;
+    }
+
     public STATE getEndState() {
         return endState;
     }
