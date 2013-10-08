@@ -131,12 +131,21 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         STATE startState = currentState;
         STATE endState = transition.getEndState();
         lastEvent = event;
-        transition.getAction().run();
+        executeAction(transition);
         currentState = endState;
         if (endState != startState) {
             exitActions.runAction(startState);
             entryActions.runAction(endState);
         }
+    }
+
+    /**
+     * Execute the action associated with a given transition.
+     * 
+     * @param transition The transition to execute the related actions.
+     */
+    protected void executeAction(Transition transition) {
+      transition.getAction().run();
     }
 
     /**
