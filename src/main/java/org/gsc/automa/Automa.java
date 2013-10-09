@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Gianluca Scacco
+ * Copyright 2013 Gianluca Scacco & Raffaele Rossi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  *
  * Gianluca Scacco <gianluca.scacco@gmail.com>
+ * Raffaele Rossi <rossi.raffaele@gmail.com>
  */
 
 package org.gsc.automa;
@@ -125,7 +126,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
         executeAction(transition, payload);
         currentState = transition.getEndState();
-        if ( ! transition.isLace()) {
+        if (!transition.isLace()) {
             exitActions.runAction(transition.getStartState());
             entryActions.runAction(currentState);
         }
@@ -133,14 +134,14 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     /**
      * Execute the action associated with a given transition.
-     * 
-     * @param transition The transition to execute the related actions. 
-     * @param payload    The payload associated with the event that 
+     *
+     * @param transition The transition to execute the related actions.
+     * @param payload    The payload associated with the event that
      *                   triggered the transition. This is supposed
      *                   to be passed to the action.
      */
     protected void executeAction(Transition transition, Object payload) {
-      transition.getAction().run(payload);
+        transition.getAction().run(payload);
     }
 
     /**

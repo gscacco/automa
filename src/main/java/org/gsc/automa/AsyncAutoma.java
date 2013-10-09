@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Gianluca Scacco
+ * Copyright 2013 Gianluca Scacco & Raffaele Rossi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  *
  * Gianluca Scacco <gianluca.scacco@gmail.com>
+ * Raffaele Rossi <rossi.raffaele@gmail.com>
  */
 
 package org.gsc.automa;
 
-public class AsyncAutoma<STATE extends Enum, EVENT extends Enum> 
-extends Automa<STATE, EVENT> {
+public class AsyncAutoma<STATE extends Enum, EVENT extends Enum>
+        extends Automa<STATE, EVENT> {
 
     /**
      * AsyncAutoma constructor
@@ -27,16 +28,16 @@ extends Automa<STATE, EVENT> {
      * @param startState The start state of the automa
      */
     public AsyncAutoma(STATE startState) {
-      super(startState);
+        super(startState);
     }
 
     @Override
     protected void executeAction(final Transition transition, final Object paylaod) {
-      new Thread(new Runnable() {
-          @Override
-          public void run() {
-            transition.getAction().run(paylaod);
-          }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                transition.getAction().run(paylaod);
+            }
         }).start();
     }
 

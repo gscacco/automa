@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Gianluca Scacco
+ * Copyright 2013 Gianluca Scacco & Raffaele Rossi
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  *
  * Gianluca Scacco <gianluca.scacco@gmail.com>
+ * Raffaele Rossi <rossi.raffaele@gmail.com>
  */
 package org.gsc.automa;
 
 import java.util.ArrayList;
-
-import org.gsc.automa.Automa.Action;
 
 public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     private AutomaState<STATE, EVENT> startState;
@@ -61,9 +60,11 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     public void andDo(Runnable action) {
         class RunnableActionAdapter implements Automa.Action {
             private Runnable runnable;
+
             RunnableActionAdapter(Runnable runnable) {
                 this.runnable = runnable;
             }
+
             @Override
             public void run(Object obj) {
                 runnable.run();
