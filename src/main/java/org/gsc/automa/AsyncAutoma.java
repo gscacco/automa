@@ -19,8 +19,11 @@
 
 package org.gsc.automa;
 
-public class AsyncAutoma<STATE extends Enum, EVENT extends Enum>
-        extends Automa<STATE, EVENT> {
+import java.util.concurrent.LinkedBlockingQueue;
+
+public class AsyncAutoma<STATE extends Enum, EVENT extends Enum> extends Automa<STATE, EVENT> {
+    private Thread jobsThread;
+    private LinkedBlockingQueue<EventPayload> linkedBlockingJobs = (LinkedBlockingQueue<EventPayload>) jobs;
 
     /**
      * AsyncAutoma constructor
@@ -29,16 +32,29 @@ public class AsyncAutoma<STATE extends Enum, EVENT extends Enum>
      */
     public AsyncAutoma(STATE startState) {
         super(startState);
+        jobsThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        EventPayload eventPayLoad = linkedBlockingJobs.take();
+                        handleEvent(eventPayLoad.event, eventPayLoad.payload);
+                    } catch (InterruptedException e) {
+                        // TODO
+                    }
+                }
+            }
+        });
+        jobsThread.start();
     }
 
     @Override
-    protected void executeAction(final Transition transition, final Object paylaod) {
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                transition.getAction().run(paylaod);
-            }
-        }).start();
+    public synchronized void signalEvent(EVENT event, Object payload) {
+        jobs.add(new EventPayload(event, payload));
     }
 
+    @Override
+    public synchronized void signalEvent(EVENT event) {
+        signalEvent(event, new Object());
+    }
 }
