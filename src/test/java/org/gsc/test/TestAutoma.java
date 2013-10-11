@@ -29,6 +29,8 @@ public class TestAutoma extends AutomaTestCase {
 
     private Automa automa;
     private SpyAction action;
+    private int seqNum=1;
+    private int res=0;
 
     @Before
     public void before() {
@@ -162,6 +164,37 @@ public class TestAutoma extends AutomaTestCase {
         spyAction.assertExecuted();
     }
 
+    @Test
+    public void shouldExecuteActionsInOrder() {
+        
+        Runnable exitAction = new Runnable() {
+            @Override
+            public void run() {
+                res+=Math.pow(2,seqNum++);
+            }
+        };
+        Runnable action = new Runnable() {
+            @Override
+            public void run() {
+                res+=Math.pow(3,seqNum++);
+            }
+        };
+        Runnable entryAction = new Runnable() {
+            @Override
+            public void run() {
+                res+=Math.pow(5,seqNum++);
+            }
+        };
+        
+        // setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDo(action);
+        automa.onceOut(FakeState.STATE_1, exitAction);
+        automa.onceIn(FakeState.STATE_2, entryAction);
+        // exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        // verify
+        assertEquals((int)(Math.pow(2,1)+Math.pow(3,2)+Math.pow(5,3)), res);
+    }
 }
 
 

@@ -124,10 +124,12 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event      The event which has triggered the transition.
      */
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
+        if ( ! transition.isLace()) {
+            exitActions.runAction(transition.getStartState());
+        }
         executeAction(transition, payload);
         currentState = transition.getEndState();
-        if (!transition.isLace()) {
-            exitActions.runAction(transition.getStartState());
+        if ( ! transition.isLace()) {
             entryActions.runAction(currentState);
         }
     }
