@@ -20,9 +20,9 @@
 package org.gsc.automa;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
@@ -38,7 +38,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private StateActionMap<STATE> entryActions = new StateActionMap();
     private StateActionMap<STATE> exitActions = new StateActionMap();
     private boolean alreadyRunning = false;
-    private Queue<EventPayload> jobs = new LinkedList<EventPayload>();
+    protected Queue<EventPayload> jobs = new LinkedBlockingQueue<EventPayload>();
     private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
     private HoldingStrategy strategy = HoldingStrategy.HOLD;
 
@@ -71,7 +71,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event   The event to handle.
      * @param payload An optional payload associated with the signal.
      */
-    private void handleEvent(EVENT event, Object payload) {
+    protected void handleEvent(EVENT event, Object payload) {
         this.payload = payload;
         Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
         if (transition != null && transition.getValidator().validate(payload)) {
@@ -195,7 +195,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
 
-    private class EventPayload {
+    protected class EventPayload {
         EVENT event;
         Object payload;
 
