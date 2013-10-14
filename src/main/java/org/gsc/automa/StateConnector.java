@@ -1,27 +1,42 @@
+/*
+ * Copyright 2013 Gianluca Scacco & Raffaele Rossi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Gianluca Scacco <gianluca.scacco@gmail.com>
+ * Raffaele Rossi <rossi.raffaele@gmail.com>
+ */
 package org.gsc.automa;
 
 import java.util.ArrayList;
 
-/**
- * Created with IntelliJ IDEA.
- * User: gianluca
- * Date: 05/04/13
- * Time: 16.54
- * To change this template use File | Settings | File Templates.
- */
 public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     private AutomaState<STATE, EVENT> startState;
     private STATE nextState;
     private ArrayList<EVENT> events;
-    private Runnable action = null;
+    private Automa.Action action = null;
     private EventValidator validator;
 
-    static private Runnable nullAction = new Runnable() {
-        @Override public void run() { /* Do nothing */ }
+    static private Automa.Action nullAction = new Automa.Action() {
+        @Override
+        public void run(Object obj) { /* Do nothing */ }
     };
 
     static private EventValidator nullValidator = new EventValidator() {
-        @Override public boolean validate(Object obj) { return true; }
+        @Override
+        public boolean validate(Object obj) {
+            return true;
+        }
     };
 
     public StateConnector(AutomaState<STATE, EVENT> startState) {
@@ -43,10 +58,27 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     }
 
     public void andDo(Runnable action) {
+        class RunnableActionAdapter implements Automa.Action {
+            private Runnable runnable;
+
+            RunnableActionAdapter(Runnable runnable) {
+                this.runnable = runnable;
+            }
+
+            @Override
+            public void run(Object obj) {
+                runnable.run();
+            }
+        }
+        andDo(new RunnableActionAdapter(action));
+    }
+
+    public void andDo(Automa.Action action) {
         this.action = action;
-        for (EVENT event: this.events) {
+        for (EVENT event : this.events) {
             startState.transitTo(nextState, event, validator, action);
         }
+
     }
 
     public void andDoNothing() {
@@ -59,7 +91,7 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     }
 
     public StateConnector forEach(EVENT... events) {
-        for (EVENT event: events) {
+        for (EVENT event : events) {
             this.events.add(event);
         }
         return this;
