@@ -26,10 +26,10 @@ public class StateActionMap<STATE extends Enum> extends HashMap<Integer, Automa.
         put(s.ordinal(), r);
     }
 
-    public void runAction(STATE s) {
+    public void runAction(STATE s, Object payload) {
         Automa.Action r = get(s.ordinal());
         if (r != null) {
-            r.run(new Object());
+            r.run(payload);
         }
     }
 
