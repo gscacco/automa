@@ -20,6 +20,7 @@ package org.gsc.test;
 
 import org.gsc.automa.Automa;
 import org.gsc.test.utils.SpyAction;
+import org.gsc.test.utils.SpyActionWithPayload;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,17 +31,19 @@ public class TestAutomaEntryExitActions {
     }
 
     private enum Events {
-        EVENT_TWO, EVENT_ONE
+        EVENT_ONE
 
     }
 
     private Automa<States, Events> automa;
     private SpyAction action;
+    private SpyActionWithPayload actionWithPayload;
 
     @Before
     public void before() {
         automa = new Automa<States, Events>(States.IDLE);
         action = new SpyAction();
+        actionWithPayload = new SpyActionWithPayload();
     }
 
     @Test
@@ -52,6 +55,17 @@ public class TestAutomaEntryExitActions {
         automa.signalEvent(Events.EVENT_ONE);
         // verify
         action.assertExecuted();
+    }
+
+    @Test
+    public void shouldHandleEntryActionWithPayload() {
+        // setup
+        automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
+        automa.onceIn(States.RUNNING, actionWithPayload);
+        // exercise
+        automa.signalEvent(Events.EVENT_ONE);
+        // verify
+        actionWithPayload.assertExecuted();
     }
 
     @Test
@@ -77,6 +91,17 @@ public class TestAutomaEntryExitActions {
     }
 
     @Test
+    public void shouldHandleExitActionWithPayload() {
+        // setup
+        automa.from(States.IDLE).goTo(States.RUNNING).when(Events.EVENT_ONE).andDoNothing();
+        automa.onceOut(States.IDLE, actionWithPayload);
+        // exercise
+        automa.signalEvent(Events.EVENT_ONE);
+        // verify
+        actionWithPayload.assertExecuted();
+    }
+
+    @Test
     public void shouldIgnoreExitActionWhenStay() {
         // setup
         automa.from(States.IDLE).stay().when(Events.EVENT_ONE).andDoNothing();
@@ -86,5 +111,6 @@ public class TestAutomaEntryExitActions {
         // verify
         action.assertNotExecuted();
     }
+
 
 }
