@@ -124,13 +124,13 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event      The event which has triggered the transition.
      */
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
-        if ( ! transition.isLace()) {
-            exitActions.runAction(transition.getStartState());
+        if (!transition.isLace()) {
+            exitActions.runAction(transition.getStartState(), payload);
         }
         executeAction(transition, payload);
         currentState = transition.getEndState();
-        if ( ! transition.isLace()) {
-            entryActions.runAction(currentState);
+        if (!transition.isLace()) {
+            entryActions.runAction(currentState, payload);
         }
     }
 
@@ -183,6 +183,16 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param action The action to be executed.
      */
     public void onceIn(STATE state, Runnable action) {
+        entryActions.put(state, new RunnableActionAdapter(action));
+    }
+
+    /**
+     * Set the action to be executed when entering a state.
+     *
+     * @param state  The state.
+     * @param action The action to be executed.
+     */
+    public void onceIn(STATE state, Action action) {
         entryActions.put(state, action);
     }
 
@@ -192,8 +202,18 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param state  The state.
      * @param action The action to be executed.
      */
-    public void onceOut(STATE state, Runnable action) {
+    public void onceOut(STATE state, Action action) {
         exitActions.put(state, action);
+    }
+
+    /**
+     * Set the action to be executed when leaving from a state.
+     *
+     * @param state  The state.
+     * @param action The action to be executed.
+     */
+    public void onceOut(STATE state, Runnable action) {
+        exitActions.put(state, new RunnableActionAdapter(action));
     }
 
 
