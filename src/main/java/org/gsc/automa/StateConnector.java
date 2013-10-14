@@ -58,18 +58,6 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     }
 
     public void andDo(Runnable action) {
-        class RunnableActionAdapter implements Automa.Action {
-            private Runnable runnable;
-
-            RunnableActionAdapter(Runnable runnable) {
-                this.runnable = runnable;
-            }
-
-            @Override
-            public void run(Object obj) {
-                runnable.run();
-            }
-        }
         andDo(new RunnableActionAdapter(action));
     }
 
