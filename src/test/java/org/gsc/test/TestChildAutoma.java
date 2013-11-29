@@ -41,6 +41,11 @@ public class TestChildAutoma extends AutomaTestCase {
         RUNNING
     }
 
+    enum EndSubState {
+        SUSPENDING,
+        SUSPENDED
+    }
+
     @Before
     public void before() {
         automa = new Automa(State.START);
@@ -127,5 +132,36 @@ public class TestChildAutoma extends AutomaTestCase {
 
         //Verify
         childAction.assertExecuted(1);
+    }
+
+    @Test
+    public void shouldSupportOneStrategyPerChildAutoma() {
+      // setup
+      final SpyAction secondChildAction = new SpyAction();
+      automa.addChildAutoma(
+              State.START,
+              HoldingStrategy.RESET,
+              new Automa(StartSubState.LOADING) {{
+                  from(StartSubState.LOADING).goTo(StartSubState.RUNNING).when(FakeEvent.EVENT_1).andDo(childAction);
+              }});
+      automa.addChildAutoma(
+              State.END,
+              HoldingStrategy.HOLD,
+              new Automa(EndSubState.SUSPENDING) {{
+                  from(EndSubState.SUSPENDING).goTo(EndSubState.SUSPENDED).when(FakeEvent.EVENT_3).andDo(secondChildAction);
+              }});
+      automa.from(State.START).goTo(State.END).when(FakeEvent.EVENT_2).andDoNothing();
+      automa.from(State.END).goTo(State.START).when(FakeEvent.EVENT_2).andDoNothing();
+      // exercise
+      automa.signalEvent(FakeEvent.EVENT_1); // START child automa transit from LOADING to RUNNING
+      automa.signalEvent(FakeEvent.EVENT_2); // automa transit from START to END
+      automa.signalEvent(FakeEvent.EVENT_3); // END child automa transit from SUSPENDING to SUSPENDED
+      automa.signalEvent(FakeEvent.EVENT_2); // automa goes back to START
+      automa.signalEvent(FakeEvent.EVENT_1); // START child automa transit again because it has been reset
+      automa.signalEvent(FakeEvent.EVENT_2); // automa transit again to END
+      automa.signalEvent(FakeEvent.EVENT_3); // END child automa discards the event
+      // verify
+      childAction.assertExecuted(2);
+      secondChildAction.assertExecuted(1);
     }
 }

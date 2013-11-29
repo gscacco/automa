@@ -31,6 +31,21 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         public void run(Object payload);
     }
 
+    static private class ChildAutoma {
+        ChildAutoma(HoldingStrategy strategy, Automa childAutoma) {
+          this.strategy = strategy;
+          this.automa = childAutoma;
+        }
+        HoldingStrategy strategy;
+        Automa automa;
+
+        void applyHoldingStrategy() {
+          if (strategy.equals(HoldingStrategy.RESET)) {
+            automa.reset();
+          }
+        }
+    }
+
     private STATE initialState;
     protected STATE currentState;
     private AutomaState[] states;
@@ -39,8 +54,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     private StateActionMap<STATE> exitActions = new StateActionMap();
     private boolean alreadyRunning = false;
     protected Queue<EventPayload> jobs = new LinkedBlockingQueue<EventPayload>();
-    private Map<STATE, Automa> childrenAutoma = new HashMap<STATE, Automa>();
-    private HoldingStrategy strategy = HoldingStrategy.HOLD;
+    private Map<STATE, ChildAutoma> childrenAutoma = new HashMap<STATE, ChildAutoma>();
 
     /**
      * Automa constructor
@@ -90,9 +104,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      *                   strategy to.
      */
     private void applyHoldingStrategy(Transition transition) {
-        Automa childAutoma = childrenAutoma.get(currentState);
-        if (childAutoma != null && strategy == HoldingStrategy.RESET && !transition.isLace()) {
-            childAutoma.reset();
+        ChildAutoma childAutoma = childrenAutoma.get(currentState);
+        if (childAutoma != null && ! transition.isLace()) {
+            childAutoma.applyHoldingStrategy();
         }
     }
 
@@ -110,9 +124,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param payload An optional payload associated with the signal.
      */
     private void signalChildAutoma(EVENT event, Object payload) {
-        Automa childAutoma = childrenAutoma.get(currentState);
+        ChildAutoma childAutoma = childrenAutoma.get(currentState);
         if (childAutoma != null) {
-            childAutoma.signalEvent(event, payload);
+            childAutoma.automa.signalEvent(event, payload);
         }
     }
 
@@ -235,8 +249,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param childAutoma The child automa.
      */
     public void addChildAutoma(STATE state, HoldingStrategy strategy, Automa childAutoma) {
-        this.strategy = strategy;
-        childrenAutoma.put(state, childAutoma);
+        childrenAutoma.put(state, new ChildAutoma(strategy, childAutoma));
     }
 
     /**

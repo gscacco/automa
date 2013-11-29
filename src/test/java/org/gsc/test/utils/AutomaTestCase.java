@@ -30,7 +30,8 @@ public class AutomaTestCase extends Assert {
 
     public enum FakeEvent {
         EVENT_1,
-        EVENT_2
+        EVENT_2,
+        EVENT_3
     }
 
 }
