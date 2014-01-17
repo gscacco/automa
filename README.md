@@ -3,7 +3,7 @@ automa
 
 Automa is a Java library to easily create and use Finite State Machines.
 
-Defining a finite state machine is a simple as defining plain enums for the states and the events like:
+For example, defining a finite state machine for a music player is as simple as defining plain enums for the states and the events like:
 
     public enum PlayerState {
         STOP,
@@ -17,7 +17,7 @@ Defining a finite state machine is a simple as defining plain enums for the stat
        PAUSE
     }
 
-Then you can simply create a Finite State Machine for a Player by doing:
+Then you can simply create the player Finite State Machine doing:
 
     Automa<PlayerState, PlayerEvent> player = new Automa<PlayerState, PlayerEvent>(PlayerState.STOP);
     player.from(PlayerState.STOP).goTo(PlayerState.PLAY).when(PlayerEvent.PLAY).andDo(new Runnable() {
@@ -46,7 +46,7 @@ Then you can simply create a Finite State Machine for a Player by doing:
         }
     });
 
-The last step will simply connect your event source to `player` to send it the events to handle:
+The last step is to connect your event source to `player` to send it the events to handle:
 
     if (userPressedPlay())       player.signalEvent(PlayerEvent.PLAY);
     else if (userPressedStop())  player.signalEvent(PlayerEvent.STOP);
