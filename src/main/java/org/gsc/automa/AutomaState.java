@@ -25,8 +25,17 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     private STATE state;
     private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
 
+    private Automa.Action entryAction;
+    private Automa.Action exitAction;
+
+    static private final Automa.Action NULL_ACTION = new Automa.Action() {
+      @Override public void run(Object payload) { /* do nothing */ }
+    };
+
     public AutomaState(STATE state) {
         this.state = state;
+        entryAction = NULL_ACTION;
+        exitAction = NULL_ACTION;
     }
 
     public STATE getState() {
@@ -47,4 +56,9 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                 validator));
     }
 
+    void setEntryAction(Automa.Action action) { this.entryAction = action; }
+    void setExitAction(Automa.Action action)  { this.exitAction = action; }
+
+    public void execEntryAction(Object payload) { entryAction.run(payload); }
+    public void execExitAction(Object payload)  { exitAction.run(payload);  }
 }
