@@ -189,7 +189,7 @@ public class TestAutoma extends AutomaTestCase {
         assertEquals("Exit action not executed as 3rd", 3, entryAction.position);
     }
 
-    @Test(expected = Exception.class)
+    @Test(expected = RuntimeException.class)
     public void shouldThrowExceptionOnTransitionRewrite() {
         //setup
         EventValidator alwaysTrue = new AlwaysValidator(true);
@@ -200,7 +200,6 @@ public class TestAutoma extends AutomaTestCase {
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).onlyIf(alwaysTrue).andDo(action);
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).onlyIf(alwaysFalse).andDo(secondAction);
         //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
         //verify
     }
 
