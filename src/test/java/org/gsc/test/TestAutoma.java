@@ -167,6 +167,7 @@ public class TestAutoma extends AutomaTestCase {
     public void shouldExecuteActionsInOrder() {
         class CountingAction implements Runnable {
             int position;
+
             @Override
             public void run() {
                 position = ++actionsExecutionOrder;
@@ -186,6 +187,33 @@ public class TestAutoma extends AutomaTestCase {
         assertEquals("Entry action not executed as 1st", 1, exitAction.position);
         assertEquals("Transiion action not executed as 2nd", 2, action.position);
         assertEquals("Exit action not executed as 3rd", 3, entryAction.position);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void shouldThrowExceptionOnTransitionRewrite() {
+        //setup
+        EventValidator alwaysTrue = new AlwaysValidator(true);
+        EventValidator alwaysFalse = new AlwaysValidator(false);
+
+        SpyAction secondAction = new SpyAction();
+
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).onlyIf(alwaysTrue).andDo(action);
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).onlyIf(alwaysFalse).andDo(secondAction);
+        //exercise
+        //verify
+    }
+
+    private class AlwaysValidator implements EventValidator {
+        private boolean value;
+
+        public AlwaysValidator(boolean value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean validate(Object object) {
+            return value;
+        }
     }
 }
 

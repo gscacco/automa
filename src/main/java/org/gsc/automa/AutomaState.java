@@ -41,6 +41,9 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                           EVENT event,
                           EventValidator validator,
                           Automa.Action action) {
+        if (transitions.containsKey(event.ordinal())) {
+            throw new RuntimeException("The transition already exists");
+        }
         transitions.put(event.ordinal(), new Transition(state,
                 endState,
                 action,
