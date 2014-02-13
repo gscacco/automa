@@ -19,6 +19,8 @@
 package org.gsc.test;
 
 import org.gsc.automa.Automa;
+import org.gsc.automa.Choice;
+import org.gsc.automa.ChoicePoint;
 import org.gsc.automa.EventValidator;
 import org.gsc.test.utils.AutomaTestCase;
 import org.gsc.test.utils.SpyAction;
@@ -201,6 +203,21 @@ public class TestAutoma extends AutomaTestCase {
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).onlyIf(alwaysFalse).andDo(secondAction);
         //exercise
         //verify
+    }
+
+    @Test
+    public void shouldExecuteActionInChoicePoint() {
+        //setup
+        automa.from(FakeState.STATE_1).when(FakeEvent.EVENT_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(FakeState.STATE_2, action);
+            }
+        });
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        action.assertExecuted();
     }
 
     private class AlwaysValidator implements EventValidator {

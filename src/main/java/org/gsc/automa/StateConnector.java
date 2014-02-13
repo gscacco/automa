@@ -89,4 +89,8 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
         this.validator = validator;
         return this;
     }
+
+    public void choice(ChoicePoint choicePoint) {
+
+    }
 }
