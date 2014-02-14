@@ -206,6 +206,21 @@ public class TestAutoma extends AutomaTestCase {
     }
 
     @Test
+    public void shouldExecuteActionAndStay() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(action);
+            }
+        }).when(FakeEvent.EVENT_1);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        action.assertExecuted();
+    }
+
+    @Test
     public void shouldExecuteActionInChoicePoint() {
         //setup
         automa.from(FakeState.STATE_1).choice(new ChoicePoint() {

@@ -24,8 +24,16 @@ public class Choice<STATE extends Enum> {
         this.action = new RunnableActionAdapter(action);
     }
 
+    public Choice(STATE state) {
+        this.state = state;
+    }
 
     public Choice(Automa.Action action) {
+        this.action = action;
+    }
+
+    public Choice(Runnable runnable) {
+        this.action = new RunnableActionAdapter(runnable);
     }
 
     public static Choice doNothingAndStay() {
