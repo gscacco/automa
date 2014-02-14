@@ -33,16 +33,17 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     static private class ChildAutoma {
         ChildAutoma(HoldingStrategy strategy, Automa childAutoma) {
-          this.strategy = strategy;
-          this.automa = childAutoma;
+            this.strategy = strategy;
+            this.automa = childAutoma;
         }
+
         HoldingStrategy strategy;
         Automa automa;
 
         void applyHoldingStrategy() {
-          if (strategy.equals(HoldingStrategy.RESET)) {
-            automa.reset();
-          }
+            if (strategy.equals(HoldingStrategy.RESET)) {
+                automa.reset();
+            }
         }
     }
 
@@ -50,8 +51,6 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     protected STATE currentState;
     private AutomaState[] states;
     private Object payload;
-    private StateActionMap<STATE> entryActions = new StateActionMap();
-    private StateActionMap<STATE> exitActions = new StateActionMap();
     private boolean alreadyRunning = false;
     protected Queue<EventPayload> jobs = new LinkedBlockingQueue<EventPayload>();
     private Map<STATE, ChildAutoma> childrenAutoma = new HashMap<STATE, ChildAutoma>();
@@ -73,7 +72,11 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     public StateConnector<STATE, EVENT> from(STATE state) {
-        return new StateConnector<STATE, EVENT>(states[state.ordinal()]);
+        return new StateConnector<STATE, EVENT>(getState(state));
+    }
+
+    protected AutomaState getState(STATE state) {
+        return states[state.ordinal()];
     }
 
     /**
@@ -87,12 +90,21 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     protected void handleEvent(EVENT event, Object payload) {
         this.payload = payload;
-        Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
-        if (transition != null && transition.getValidator().validate(payload)) {
-            transit(transition, event, payload);
-            applyHoldingStrategy(transition);
+        AutomaState currentAutomaState = states[currentState.ordinal()];
+        if (currentAutomaState.getChoicePointEvent() == event) {
+            Choice choice = currentAutomaState.getChoicePoint().choose(payload);
+            Enum newState = choice.getState();
+            Action action = choice.getAction();
+            action.run(payload);
+            currentState = (STATE) newState;
         } else {
-            signalChildAutoma(event, payload);
+            Transition<STATE> transition = getState(currentState).getTransition(event);
+            if (transition != null && transition.getValidator().validate(payload)) {
+                transit(transition, event, payload);
+                applyHoldingStrategy(transition);
+            } else {
+                signalChildAutoma(event, payload);
+            }
         }
     }
 
@@ -105,7 +117,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     private void applyHoldingStrategy(Transition transition) {
         ChildAutoma childAutoma = childrenAutoma.get(currentState);
-        if (childAutoma != null && ! transition.isLace()) {
+        if (childAutoma != null && !transition.isLace()) {
             childAutoma.applyHoldingStrategy();
         }
     }
@@ -139,12 +151,12 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
         if (!transition.isLace()) {
-            exitActions.runAction(transition.getStartState(), payload);
+            getState(transition.getStartState()).execExitAction(payload);
         }
         executeAction(transition, payload);
         currentState = transition.getEndState();
         if (!transition.isLace()) {
-            entryActions.runAction(currentState, payload);
+            getState(currentState).execEntryAction(payload);
         }
     }
 
@@ -197,7 +209,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param action The action to be executed.
      */
     public void onceIn(STATE state, Runnable action) {
-        entryActions.put(state, new RunnableActionAdapter(action));
+        onceIn(state, new RunnableActionAdapter(action));
     }
 
     /**
@@ -207,7 +219,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param action The action to be executed.
      */
     public void onceIn(STATE state, Action action) {
-        entryActions.put(state, action);
+        getState(state).setEntryAction(action);
     }
 
     /**
@@ -217,7 +229,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param action The action to be executed.
      */
     public void onceOut(STATE state, Action action) {
-        exitActions.put(state, action);
+        getState(state).setExitAction(action);
     }
 
     /**
@@ -227,7 +239,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param action The action to be executed.
      */
     public void onceOut(STATE state, Runnable action) {
-        exitActions.put(state, new RunnableActionAdapter(action));
+        onceOut(state, new RunnableActionAdapter(action));
     }
 
 
