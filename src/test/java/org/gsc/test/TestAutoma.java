@@ -234,6 +234,25 @@ public class TestAutoma extends AutomaTestCase {
         //verify
     }
 
+    @Test(expected = RuntimeException.class)
+    public void shouldThrowExceptionWhenChoiceIsRewritten() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(FakeState.STATE_2, action);
+            }
+        }).when(FakeEvent.EVENT_1);
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return null;
+            }
+        }).when(FakeEvent.EVENT_1);
+        //exercise
+        //verify
+    }
+
     private class AlwaysValidator implements EventValidator {
         private boolean value;
 

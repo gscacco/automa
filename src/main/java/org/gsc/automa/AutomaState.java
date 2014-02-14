@@ -53,6 +53,10 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     }
 
     public void setChoicePoint(ChoicePoint choicePoint, EVENT choicePointEvent) {
+        //There is already a choice with the same event
+        if (this.choicePoint != null) {
+            throw new RuntimeException("The choice point already exists");
+        }
         this.choicePoint = choicePoint;
         this.choicePointEvent = choicePointEvent;
     }
