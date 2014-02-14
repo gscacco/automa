@@ -91,8 +91,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     protected void handleEvent(EVENT event, Object payload) {
         this.payload = payload;
         AutomaState currentAutomaState = states[currentState.ordinal()];
-        if (currentAutomaState.getChoicePointEvent() == event) {
-            Choice choice = currentAutomaState.getChoicePoint().choose(payload);
+        ChoicePoint choicePoint = currentAutomaState.getChoicePoint(event);
+        if (choicePoint != null) {
+            Choice choice = choicePoint.choose(payload);
             Enum newState = choice.getState();
             Action action = choice.getAction();
             action.run(payload);
