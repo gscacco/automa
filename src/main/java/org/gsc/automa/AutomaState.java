@@ -24,6 +24,8 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
     private STATE state;
     private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
+    private ChoicePoint choicePoint;
+    private EVENT choicePointEvent;
 
     public AutomaState(STATE state) {
         this.state = state;
@@ -41,7 +43,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                           EVENT event,
                           EventValidator validator,
                           Automa.Action action) {
-        if (transitions.containsKey(event.ordinal())) {
+        if (transitions.containsKey(event.ordinal()) || choicePointEvent == event) {
             throw new RuntimeException("The transition already exists");
         }
         transitions.put(event.ordinal(), new Transition(state,
@@ -50,4 +52,20 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                 validator));
     }
 
+    public void setChoicePoint(ChoicePoint choicePoint, EVENT choicePointEvent) {
+        //There is already a choice with the same event
+        if (this.choicePoint != null) {
+            throw new RuntimeException("The choice point already exists");
+        }
+        this.choicePoint = choicePoint;
+        this.choicePointEvent = choicePointEvent;
+    }
+
+    public ChoicePoint getChoicePoint() {
+        return choicePoint;
+    }
+
+    public EVENT getChoicePointEvent() {
+        return choicePointEvent;
+    }
 }
