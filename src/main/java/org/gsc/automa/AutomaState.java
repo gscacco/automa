@@ -19,13 +19,13 @@
 package org.gsc.automa;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
     private STATE state;
     private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
-    private ChoicePoint choicePoint;
-    private EVENT choicePointEvent;
+    private Map<EVENT, ChoicePoint> choicePointMap = new HashMap<EVENT, ChoicePoint>();
 
     private Automa.Action entryAction;
     private Automa.Action exitAction;
@@ -53,7 +53,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                           EVENT event,
                           EventValidator validator,
                           Automa.Action action) {
-        if (transitions.containsKey(event.ordinal()) || choicePointEvent == event) {
+        if (transitions.containsKey(event.ordinal()) || choicePointMap.containsKey(event)) {
             throw new RuntimeException("The transition already exists");
         }
         transitions.put(event.ordinal(), new Transition(state,
@@ -80,18 +80,13 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
     public void setChoicePoint(ChoicePoint choicePoint, EVENT choicePointEvent) {
         //There is already a choice with the same event
-        if (this.choicePoint != null) {
+        if (this.choicePointMap.containsKey(choicePointEvent)) {
             throw new RuntimeException("The choice point already exists");
         }
-        this.choicePoint = choicePoint;
-        this.choicePointEvent = choicePointEvent;
+        this.choicePointMap.put(choicePointEvent, choicePoint);
     }
 
-    public ChoicePoint getChoicePoint() {
-        return choicePoint;
-    }
-
-    public EVENT getChoicePointEvent() {
-        return choicePointEvent;
+    public ChoicePoint getChoicePoint(EVENT event) {
+        return choicePointMap.get(event);
     }
 }
