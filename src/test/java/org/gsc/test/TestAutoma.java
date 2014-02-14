@@ -208,7 +208,7 @@ public class TestAutoma extends AutomaTestCase {
     @Test
     public void shouldExecuteActionInChoicePoint() {
         //setup
-        automa.from(FakeState.STATE_1).when(FakeEvent.EVENT_1).choice(new ChoicePoint() {
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
             @Override
             public Choice choose(Object payload) {
                 return new Choice(FakeState.STATE_2, action);
@@ -218,6 +218,20 @@ public class TestAutoma extends AutomaTestCase {
         automa.signalEvent(FakeEvent.EVENT_1);
         //verify
         action.assertExecuted();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void shouldThrowExceptionWhenChoiceAndTransitionWithTheSameEvent() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(FakeState.STATE_2, action);
+            }
+        }).when(FakeEvent.EVENT_1);
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        //verify
     }
 
     private class AlwaysValidator implements EventValidator {
