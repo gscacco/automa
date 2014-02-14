@@ -213,7 +213,7 @@ public class TestAutoma extends AutomaTestCase {
             public Choice choose(Object payload) {
                 return new Choice(FakeState.STATE_2, action);
             }
-        });
+        }).when(FakeEvent.EVENT_1);
         //exercise
         automa.signalEvent(FakeEvent.EVENT_1);
         //verify

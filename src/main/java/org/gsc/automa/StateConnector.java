@@ -38,6 +38,7 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
             return true;
         }
     };
+    private ChoiceConnector choiceConnector;
 
     public StateConnector(AutomaState<STATE, EVENT> startState) {
         this.startState = startState;
@@ -90,7 +91,24 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
         return this;
     }
 
-    public void choice(ChoicePoint choicePoint) {
+    public ChoiceConnector choice(ChoicePoint choicePoint) {
+        this.choiceConnector = new ChoiceConnector(startState, choicePoint);
+        return choiceConnector;
+    }
 
+    public class ChoiceConnector {
+        private final AutomaState state;
+        private final ChoicePoint choice;
+        private EVENT event;
+
+        public ChoiceConnector(AutomaState state, ChoicePoint choice) {
+            this.state = state;
+            this.choice = choice;
+        }
+
+        public void when(EVENT event) {
+            this.event = event;
+            state.setChoicePoint(choice, event);
+        }
     }
 }

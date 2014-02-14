@@ -33,16 +33,17 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     static private class ChildAutoma {
         ChildAutoma(HoldingStrategy strategy, Automa childAutoma) {
-          this.strategy = strategy;
-          this.automa = childAutoma;
+            this.strategy = strategy;
+            this.automa = childAutoma;
         }
+
         HoldingStrategy strategy;
         Automa automa;
 
         void applyHoldingStrategy() {
-          if (strategy.equals(HoldingStrategy.RESET)) {
-            automa.reset();
-          }
+            if (strategy.equals(HoldingStrategy.RESET)) {
+                automa.reset();
+            }
         }
     }
 
@@ -87,12 +88,22 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     protected void handleEvent(EVENT event, Object payload) {
         this.payload = payload;
-        Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
-        if (transition != null && transition.getValidator().validate(payload)) {
-            transit(transition, event, payload);
-            applyHoldingStrategy(transition);
+
+        AutomaState currentAutomaState = states[currentState.ordinal()];
+        if (currentAutomaState.getChoicePointEvent() == event) {
+            Choice choice = currentAutomaState.getChoicePoint().choose(payload);
+            Enum newState = choice.getState();
+            Action action = choice.getAction();
+            action.run(payload);
+            currentState = (STATE) newState;
         } else {
-            signalChildAutoma(event, payload);
+            Transition<STATE> transition = states[currentState.ordinal()].getTransition(event);
+            if (transition != null && transition.getValidator().validate(payload)) {
+                transit(transition, event, payload);
+                applyHoldingStrategy(transition);
+            } else {
+                signalChildAutoma(event, payload);
+            }
         }
     }
 
@@ -105,7 +116,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      */
     private void applyHoldingStrategy(Transition transition) {
         ChildAutoma childAutoma = childrenAutoma.get(currentState);
-        if (childAutoma != null && ! transition.isLace()) {
+        if (childAutoma != null && !transition.isLace()) {
             childAutoma.applyHoldingStrategy();
         }
     }
