@@ -194,106 +194,21 @@ public class TestAutoma extends AutomaTestCase {
     @Test(expected = RuntimeException.class)
     public void shouldThrowExceptionOnTransitionRewrite() {
         //setup
-        EventValidator alwaysTrue = new AlwaysValidator(true);
-        EventValidator alwaysFalse = new AlwaysValidator(false);
+        EventValidator alwaysTrue = new SimpleValidator(true);
+        EventValidator alwaysFalse = new SimpleValidator(false);
 
         SpyAction secondAction = new SpyAction();
 
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).onlyIf(alwaysTrue).andDo(action);
+        //exercise
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).onlyIf(alwaysFalse).andDo(secondAction);
-        //exercise
         //verify
     }
 
-    @Test
-    public void shouldExecuteActionAndStay() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        //verify
-        action.assertExecuted();
-    }
-
-    @Test
-    public void shouldExecuteActionInChoicePoint() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        //verify
-        action.assertExecuted();
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void shouldThrowExceptionWhenChoiceAndTransitionWithTheSameEvent() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
-        //exercise
-        //verify
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void shouldThrowExceptionWhenChoiceIsRewritten() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return null;
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        //verify
-    }
-
-
-    @Test
-    public void shouldHandleMoreChoicePoint() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_3);
-            }
-        }).when(FakeEvent.EVENT_2);
-        //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        //verify
-        action.assertExecuted();
-    }
-
-    private class AlwaysValidator implements EventValidator {
+    private class SimpleValidator implements EventValidator {
         private boolean value;
 
-        public AlwaysValidator(boolean value) {
+        public SimpleValidator(boolean value) {
             this.value = value;
         }
 
