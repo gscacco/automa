@@ -253,6 +253,35 @@ public class TestAutoma extends AutomaTestCase {
         //verify
     }
 
+    @Test
+    public void shouldExecutePostTransition() {
+        //setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        SpyAction postRun = new SpyAction();
+        automa.postTransitionHook(postRun);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        postRun.assertExecuted();
+    }
+
+    @Test
+    public void shouldExecutePostTransitionOnChoice() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return Choice.doNothingAndStay();
+            }
+        }).when(FakeEvent.EVENT_1);
+        SpyAction postRun = new SpyAction();
+        automa.postTransitionHook(postRun);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        postRun.assertExecuted();
+    }
+
     private class AlwaysValidator implements EventValidator {
         private boolean value;
 

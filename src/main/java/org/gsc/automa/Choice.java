@@ -11,7 +11,7 @@ public class Choice<STATE extends Enum> {
         }
     };
     private STATE state;
-    private Automa.Action action;
+    private Automa.Action action = nullAction;
 
 
     public Choice(STATE state, Automa.Action action) {

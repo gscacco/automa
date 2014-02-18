@@ -27,6 +27,18 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
 
+    private static Runnable nullRunnable = new Runnable() {
+        @Override
+        public void run() {
+
+        }
+    };
+    private Runnable afterTransition = nullRunnable;
+
+    public void postTransitionHook(Runnable afterTransition) {
+        this.afterTransition = afterTransition;
+    }
+
     static public interface Action {
         public void run(Object payload);
     }
@@ -93,10 +105,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         AutomaState currentAutomaState = states[currentState.ordinal()];
         if (currentAutomaState.getChoicePointEvent() == event) {
             Choice choice = currentAutomaState.getChoicePoint().choose(payload);
-            Enum newState = choice.getState();
-            Action action = choice.getAction();
-            action.run(payload);
-            currentState = (STATE) newState;
+            Enum newState = choice.getState() == null ? currentState : choice.getState();
+            Transition transition = new Transition(currentState, newState, choice.getAction(), null);
+            transit(transition, event, payload);
         } else {
             Transition<STATE> transition = getState(currentState).getTransition(event);
             if (transition != null && transition.getValidator().validate(payload)) {
@@ -158,6 +169,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         if (!transition.isLace()) {
             getState(currentState).execEntryAction(payload);
         }
+        afterTransition.run();
     }
 
     /**
