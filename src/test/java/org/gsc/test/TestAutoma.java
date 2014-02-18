@@ -24,6 +24,7 @@ import org.gsc.automa.ChoicePoint;
 import org.gsc.automa.EventValidator;
 import org.gsc.test.utils.AutomaTestCase;
 import org.gsc.test.utils.SpyAction;
+import org.gsc.test.utils.SpyTransitionHookAction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -194,106 +195,52 @@ public class TestAutoma extends AutomaTestCase {
     @Test(expected = RuntimeException.class)
     public void shouldThrowExceptionOnTransitionRewrite() {
         //setup
-        EventValidator alwaysTrue = new AlwaysValidator(true);
-        EventValidator alwaysFalse = new AlwaysValidator(false);
+        EventValidator alwaysTrue = new SimpleValidator(true);
+        EventValidator alwaysFalse = new SimpleValidator(false);
 
         SpyAction secondAction = new SpyAction();
 
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_1).onlyIf(alwaysTrue).andDo(action);
+        //exercise
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).onlyIf(alwaysFalse).andDo(secondAction);
-        //exercise
         //verify
     }
 
     @Test
-    public void shouldExecuteActionAndStay() {
+    public void shouldExecutePostTransition() {
         //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        //verify
-        action.assertExecuted();
-    }
-
-    @Test
-    public void shouldExecuteActionInChoicePoint() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        automa.signalEvent(FakeEvent.EVENT_1);
-        //verify
-        action.assertExecuted();
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void shouldThrowExceptionWhenChoiceAndTransitionWithTheSameEvent() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
         automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
-        //exercise
-        //verify
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void shouldThrowExceptionWhenChoiceIsRewritten() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return null;
-            }
-        }).when(FakeEvent.EVENT_1);
-        //exercise
-        //verify
-    }
-
-
-    @Test
-    public void shouldHandleMoreChoicePoint() {
-        //setup
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_2, action);
-            }
-        }).when(FakeEvent.EVENT_1);
-        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
-            @Override
-            public Choice choose(Object payload) {
-                return new Choice(FakeState.STATE_3);
-            }
-        }).when(FakeEvent.EVENT_2);
+        SpyTransitionHookAction postRun = new SpyTransitionHookAction();
+        automa.setPostTransitionHook(postRun);
         //exercise
         automa.signalEvent(FakeEvent.EVENT_1);
         //verify
-        action.assertExecuted();
+        postRun.assertExecuted();
+        assertEquals(postRun.getFromStatus(), FakeState.STATE_1);
+        assertEquals(postRun.getToStatus(), FakeState.STATE_2);
     }
 
-    private class AlwaysValidator implements EventValidator {
+    @Test
+    public void shouldExecutePostTransitionOnChoice() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return Choice.doNothingAndStay();
+            }
+        }).when(FakeEvent.EVENT_1);
+        SpyTransitionHookAction postRun = new SpyTransitionHookAction();
+        automa.setPostTransitionHook(postRun);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        postRun.assertExecuted();
+    }
+
+    private class SimpleValidator implements EventValidator {
         private boolean value;
 
-        public AlwaysValidator(boolean value) {
+        public SimpleValidator(boolean value) {
             this.value = value;
         }
 

@@ -23,6 +23,7 @@ import java.util.Map;
 
 public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
+    public static final String MESSAGE = "The transition already exists";
     private STATE state;
     private HashMap<Integer, Transition<STATE>> transitions = new HashMap<Integer, Transition<STATE>>();
     private Map<EVENT, ChoicePoint> choicePointMap = new HashMap<EVENT, ChoicePoint>();
@@ -54,7 +55,7 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
                           EventValidator validator,
                           Automa.Action action) {
         if (transitions.containsKey(event.ordinal()) || choicePointMap.containsKey(event)) {
-            throw new RuntimeException("The transition already exists");
+            throw new RuntimeException(MESSAGE);
         }
         transitions.put(event.ordinal(), new Transition(state,
                 endState,
@@ -80,8 +81,9 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
 
     public void setChoicePoint(ChoicePoint choicePoint, EVENT choicePointEvent) {
         //There is already a choice with the same event
-        if (this.choicePointMap.containsKey(choicePointEvent)) {
-            throw new RuntimeException("The choice point already exists");
+        if (this.choicePointMap.containsKey(choicePointEvent) ||
+                transitions.containsKey(choicePointEvent.ordinal())) {
+            throw new RuntimeException(MESSAGE);
         }
         this.choicePointMap.put(choicePointEvent, choicePoint);
     }

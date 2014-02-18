@@ -27,6 +27,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
 
+    private TransitionHookAction nullTransitionHook = new TransitionHookAction() {
+        @Override
+        public void run(Enum fromState, Enum toState) {
+
+        }
+    };
+
+    private TransitionHookAction afterTransition = nullTransitionHook;
+
+    public void setPostTransitionHook(TransitionHookAction afterTransition) {
+        this.afterTransition = afterTransition;
+    }
+
     static public interface Action {
         public void run(Object payload);
     }
@@ -94,10 +107,9 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         ChoicePoint choicePoint = currentAutomaState.getChoicePoint(event);
         if (choicePoint != null) {
             Choice choice = choicePoint.choose(payload);
-            Enum newState = choice.getState();
-            Action action = choice.getAction();
-            action.run(payload);
-            currentState = (STATE) newState;
+            Enum newState = choice.getState() == null ? currentState : choice.getState();
+            Transition transition = new Transition(currentState, newState, choice.getAction(), null);
+            transit(transition, event, payload);
         } else {
             Transition<STATE> transition = getState(currentState).getTransition(event);
             if (transition != null && transition.getValidator().validate(payload)) {
@@ -151,6 +163,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event      The event which has triggered the transition.
      */
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
+        Enum oldState = currentState;
         if (!transition.isLace()) {
             getState(transition.getStartState()).execExitAction(payload);
         }
@@ -159,6 +172,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         if (!transition.isLace()) {
             getState(currentState).execEntryAction(payload);
         }
+        afterTransition.run(oldState, currentState);
     }
 
     /**
