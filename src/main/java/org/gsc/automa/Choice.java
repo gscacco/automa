@@ -29,7 +29,7 @@ public class Choice<STATE extends Enum> {
         }
     };
     private STATE state;
-    private Automa.Action action;
+    private Automa.Action action = NULL_ACTION;
 
     public Choice(STATE state, Automa.Action action) {
         this.state = state;
@@ -58,5 +58,9 @@ public class Choice<STATE extends Enum> {
 
     public Automa.Action getAction() {
         return action;
+    }
+
+    public static Choice doNothingAndStay() {
+        return new Choice(NULL_ACTION);
     }
 }
