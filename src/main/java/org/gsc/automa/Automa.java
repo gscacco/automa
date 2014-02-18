@@ -27,15 +27,16 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
 
-    private static Runnable nullRunnable = new Runnable() {
+    private TransitionHookAction nullTransitionHook = new TransitionHookAction() {
         @Override
-        public void run() {
+        public void run(Enum fromState, Enum toState) {
 
         }
     };
-    private Runnable afterTransition = nullRunnable;
 
-    public void postTransitionHook(Runnable afterTransition) {
+    private TransitionHookAction afterTransition = nullTransitionHook;
+
+    public void setPostTransitionHook(TransitionHookAction afterTransition) {
         this.afterTransition = afterTransition;
     }
 
@@ -161,6 +162,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
      * @param event      The event which has triggered the transition.
      */
     protected void transit(Transition<STATE> transition, EVENT event, Object payload) {
+        Enum oldState = currentState;
         if (!transition.isLace()) {
             getState(transition.getStartState()).execExitAction(payload);
         }
@@ -169,7 +171,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         if (!transition.isLace()) {
             getState(currentState).execEntryAction(payload);
         }
-        afterTransition.run();
+        afterTransition.run(oldState, currentState);
     }
 
     /**
