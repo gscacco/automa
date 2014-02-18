@@ -54,6 +54,22 @@ public class TestChoicePoint extends AutomaTestCase {
     }
 
     @Test
+    public void shouldStayOnInitialStateIfFinalStateNotChosen() {
+        //setup
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(action);
+            }
+        }).when(FakeEvent.EVENT_1);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        action.assertExecuted(2);
+    }
+
+    @Test
     public void shouldTransitateToChosenStateDoingNothing() {
         //setup
         automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
@@ -100,6 +116,20 @@ public class TestChoicePoint extends AutomaTestCase {
         }).when(FakeEvent.EVENT_1);
         //exercise
         automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDoNothing();
+        //verify
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void shouldPreventOverwritingSimpleTransitionsWithChoicePoint() {
+        //setup
+        automa.from(FakeState.STATE_1).stay().when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        automa.from(FakeState.STATE_1).choice(new ChoicePoint() {
+            @Override
+            public Choice choose(Object payload) {
+                return new Choice(FakeState.STATE_2);
+            }
+        }).when(FakeEvent.EVENT_1);
         //verify
     }
 
