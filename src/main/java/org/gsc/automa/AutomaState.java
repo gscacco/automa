@@ -53,8 +53,11 @@ public class AutomaState<STATE extends Enum, EVENT extends Enum> {
     public void transitTo(STATE endState,
                           EVENT event,
                           EventValidator validator,
-                          Automa.Action action) {
-        if (transitions.containsKey(event.ordinal()) || choicePointMap.containsKey(event)) {
+                          Automa.Action action, Automa<STATE, EVENT>.ResetConnector resetConnector) {
+
+        if (transitions.containsKey(event.ordinal()) ||
+                choicePointMap.containsKey(event) ||
+                (resetConnector != null && resetConnector.event == event)) {
             throw new RuntimeException(MESSAGE);
         }
         transitions.put(event.ordinal(), new Transition(state,
