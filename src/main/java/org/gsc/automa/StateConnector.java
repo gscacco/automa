@@ -27,10 +27,6 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     private Automa.Action action = null;
     private EventValidator validator;
 
-    static private Automa.Action nullAction = new Automa.Action() {
-        @Override
-        public void run(Object obj) { /* Do nothing */ }
-    };
 
     static private EventValidator nullValidator = new EventValidator() {
         @Override
@@ -44,7 +40,7 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
         this.startState = startState;
         this.nextState = startState.getState();
         this.events = new ArrayList<EVENT>();
-        this.action = nullAction;
+        this.action = Automa.nullAction;
         this.validator = nullValidator;
     }
 

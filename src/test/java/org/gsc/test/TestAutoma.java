@@ -237,6 +237,32 @@ public class TestAutoma extends AutomaTestCase {
         postRun.assertExecuted();
     }
 
+    @Test
+    public void shouldAutomaResetAndDo() {
+        //setup
+        automa.reset().when(FakeEvent.EVENT_1).andDo(action);
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        action.assertExecuted();
+    }
+
+    @Test
+    public void shouldAutomaResetAndDoNothing() {
+        //setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_2).andDo(action);
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_3).when(FakeEvent.EVENT_3).andDoNothing();
+        automa.reset().when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_3);
+
+        automa.signalEvent(FakeEvent.EVENT_1);
+
+        automa.signalEvent(FakeEvent.EVENT_2);
+        //verify
+        action.assertExecuted();
+    }
+
     private class SimpleValidator implements EventValidator {
         private boolean value;
 
