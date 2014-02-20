@@ -53,4 +53,11 @@ public class Transition<STATE extends Enum> {
     public boolean isLace() {
         return startState == endState;
     }
+
+    @Override
+    public String toString() {
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("From ").append(startState).append(" to ").append(endState);
+        return buffer.toString();
+    }
 }

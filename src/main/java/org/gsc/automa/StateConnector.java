@@ -22,15 +22,12 @@ import java.util.ArrayList;
 
 public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     private AutomaState<STATE, EVENT> startState;
+    private Automa<STATE, EVENT> automa;
     private STATE nextState;
     private ArrayList<EVENT> events;
     private Automa.Action action = null;
     private EventValidator validator;
 
-    static private Automa.Action nullAction = new Automa.Action() {
-        @Override
-        public void run(Object obj) { /* Do nothing */ }
-    };
 
     static private EventValidator nullValidator = new EventValidator() {
         @Override
@@ -40,11 +37,12 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     };
     private ChoiceConnector choiceConnector;
 
-    public StateConnector(AutomaState<STATE, EVENT> startState) {
+    public StateConnector(AutomaState<STATE, EVENT> startState, Automa<STATE, EVENT> automa) {
         this.startState = startState;
+        this.automa = automa;
         this.nextState = startState.getState();
         this.events = new ArrayList<EVENT>();
-        this.action = nullAction;
+        this.action = Automa.nullAction;
         this.validator = nullValidator;
     }
 
@@ -65,7 +63,7 @@ public class StateConnector<STATE extends Enum, EVENT extends Enum> {
     public void andDo(Automa.Action action) {
         this.action = action;
         for (EVENT event : this.events) {
-            startState.transitTo(nextState, event, validator, action);
+            startState.transitTo(nextState, event, validator, action, automa.resetConnector);
         }
 
     }

@@ -27,6 +27,43 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
 
+    protected Automa<STATE, EVENT>.ResetConnector resetConnector;
+
+    public class ResetConnector {
+
+        protected EVENT event;
+        private Action action = nullAction;
+        private Automa<STATE, EVENT> automa;
+
+        public ResetConnector(Automa<STATE, EVENT> automa) {
+            this.automa = automa;
+        }
+
+        public ResetConnector when(EVENT event) {
+            this.event = event;
+            return this;
+        }
+
+        public void andDo(Action action) {
+            for (AutomaState state : automa.states) {
+                Transition transition = state.getTransition(event);
+                if (transition != null) {
+                    throw new RuntimeException("Event already used by another transition: " + transition.toString());
+                }
+            }
+
+            this.action = action;
+        }
+
+        public void andDo(Runnable action) {
+            andDo(new RunnableActionAdapter(action));
+        }
+
+        public void andDoNothing() {
+            andDo(action);
+        }
+    }
+
     private TransitionHookAction nullTransitionHook = new TransitionHookAction() {
         @Override
         public void run(Enum fromState, Enum toState) {
@@ -40,9 +77,19 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         this.afterTransition = afterTransition;
     }
 
+    public ResetConnector reset() {
+        resetConnector = new ResetConnector(this);
+        return resetConnector;
+    }
+
     static public interface Action {
         public void run(Object payload);
     }
+
+    static public Automa.Action nullAction = new Automa.Action() {
+        @Override
+        public void run(Object obj) { /* Do nothing */ }
+    };
 
     static private class ChildAutoma {
         ChildAutoma(HoldingStrategy strategy, Automa childAutoma) {
@@ -55,7 +102,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
         void applyHoldingStrategy() {
             if (strategy.equals(HoldingStrategy.RESET)) {
-                automa.reset();
+                automa.resetAutoma();
             }
         }
     }
@@ -85,7 +132,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     public StateConnector<STATE, EVENT> from(STATE state) {
-        return new StateConnector<STATE, EVENT>(getState(state));
+        return new StateConnector<STATE, EVENT>(getState(state), this);
     }
 
     protected AutomaState getState(STATE state) {
@@ -105,7 +152,11 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         this.payload = payload;
         AutomaState currentAutomaState = states[currentState.ordinal()];
         ChoicePoint choicePoint = currentAutomaState.getChoicePoint(event);
-        if (choicePoint != null) {
+
+        if (resetConnector != null && event == resetConnector.event) {
+            Transition transition = new Transition(currentState, initialState, resetConnector.action, null);
+            transit(transition, event, payload);
+        } else if (choicePoint != null) {
             Choice choice = choicePoint.choose(payload);
             Enum newState = choice.getState() == null ? currentState : choice.getState();
             Transition transition = new Transition(currentState, newState, choice.getAction(), null);
@@ -123,7 +174,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
 
     /**
      * Check whether the given transition requires the child automa
-     * to be reset, according to the holding strategy.
+     * to be resetAutoma, according to the holding strategy.
      *
      * @param transition The transition to apply the holding
      *                   strategy to.
@@ -138,7 +189,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     /**
      * Reset the automa to its initial start state.
      */
-    private void reset() {
+    private void resetAutoma() {
         this.currentState = initialState;
     }
 
