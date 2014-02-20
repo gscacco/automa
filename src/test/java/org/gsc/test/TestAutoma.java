@@ -263,6 +263,49 @@ public class TestAutoma extends AutomaTestCase {
         action.assertExecuted();
     }
 
+    @Test
+    public void shouldAutomaResetAndCheckWithPostTransitionHook() {
+        //setup
+        SpyTransitionHookAction postRun = new SpyTransitionHookAction();
+        automa.setPostTransitionHook(postRun);
+        automa.reset().when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        //verify
+        postRun.assertExecuted();
+    }
+
+    @Test
+    public void shouldExecuteExitActionOnReset() {
+        //setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        automa.onceOut(FakeState.STATE_2, action);
+        automa.reset().when(FakeEvent.EVENT_2).andDoNothing();
+        //exercise
+        automa.signalEvent(FakeEvent.EVENT_1);
+        automa.signalEvent(FakeEvent.EVENT_2);
+        //verify
+        action.assertExecuted();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void shouldThrowExceptionWhenOverwriteOnReset() {
+        //setup
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        automa.reset().when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        //verify
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void shouldThrowExceptionWhenOverwriteOnResetSecondCase() {
+        //setup
+        automa.reset().when(FakeEvent.EVENT_1).andDoNothing();
+        automa.from(FakeState.STATE_1).goTo(FakeState.STATE_2).when(FakeEvent.EVENT_1).andDoNothing();
+        //exercise
+        //verify
+    }
+
     private class SimpleValidator implements EventValidator {
         private boolean value;
 

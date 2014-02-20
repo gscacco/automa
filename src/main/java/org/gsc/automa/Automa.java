@@ -27,12 +27,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Automa<STATE extends Enum, EVENT extends Enum> {
 
-    private Automa<STATE, EVENT>.ResetConnector resetConnector;
+    protected Automa<STATE, EVENT>.ResetConnector resetConnector;
 
     public class ResetConnector {
 
-        private EVENT event;
+        protected EVENT event;
         private Action action = nullAction;
+        private Automa<STATE, EVENT> automa;
+
+        public ResetConnector(Automa<STATE, EVENT> automa) {
+            this.automa = automa;
+        }
 
         public ResetConnector when(EVENT event) {
             this.event = event;
@@ -40,6 +45,13 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
         }
 
         public void andDo(Action action) {
+            for (AutomaState state : automa.states) {
+                Transition transition = state.getTransition(event);
+                if (transition != null) {
+                    throw new RuntimeException("Event already used by another transition: " + transition.toString());
+                }
+            }
+
             this.action = action;
         }
 
@@ -66,7 +78,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     public ResetConnector reset() {
-        resetConnector = new ResetConnector();
+        resetConnector = new ResetConnector(this);
         return resetConnector;
     }
 
@@ -120,7 +132,7 @@ public class Automa<STATE extends Enum, EVENT extends Enum> {
     }
 
     public StateConnector<STATE, EVENT> from(STATE state) {
-        return new StateConnector<STATE, EVENT>(getState(state));
+        return new StateConnector<STATE, EVENT>(getState(state), this);
     }
 
     protected AutomaState getState(STATE state) {
