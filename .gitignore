@@ -11,3 +11,5 @@ target/*
 *.vpw
 *.vpwhistu
 *.vtg
+.gradle/*
+build/*

@@ -1,0 +1,25 @@
+apply plugin: 'java'
+apply plugin: 'maven-publish'
+
+version = '0.65'
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId 'org.gsc'
+            artifactId 'automa'
+            from components.java
+        }
+    }
+}
+
+jar {
+    baseName = "automa"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+}
